@@ -63,5 +63,50 @@
       "Uses funcdctl eventing dlq replay <id> -n shop, and says that a replay uses the live Sensor spec and removes the dead letter on success",
       "Names no funcdctl command or flag that the funcdctl Spec tab does not list"
     ]
+  },
+  {
+    "id": "site-spa",
+    "skills": [
+      "funcd"
+    ],
+    "dry_run": true,
+    "query": "In this empty folder, write the funcd manifest of a Site named shop-ui that serves the static bundle ghcr.io/acme/shop-ui:1.4.0 as a single-page app at the path /shop, keeps its bundles in the prefix ui of a Bucket named shop-assets that the Site itself declares, and lets each deployment set API_URL=https://api.acme.test for the page without a rebuild. Save it as site.yaml.",
+    "files": [],
+    "expected_behavior": [
+      "site.yaml is a Site with spec.image ghcr.io/acme/shop-ui:1.4.0, spa true and ingress.path /shop, as the Site Spec tab names these fields",
+      "It has exactly one bindings.blob entry, bucket shop-assets and prefix ui, and declares that one Bucket under spec.buckets without deletion: delete",
+      "API_URL is set under runtimeConfig.values, and the answer says the page reads it from config.json or that it must hold no secret",
+      "funcdctl apply --dry-run admits site.yaml (exit 0, would apply)"
+    ]
+  },
+  {
+    "id": "lake-binding",
+    "skills": [
+      "funcd"
+    ],
+    "dry_run": true,
+    "query": "In this empty folder, write the funcd manifests for a Lake named sales whose files live in the prefix lake of a Bucket named warehouse, with an engine capped at 1 CPU and 2Gi of memory, and bind it to a Python Function named reports (handler file reports.py, a handle function) so the Function can query its tables. Put the Bucket in its own bucket.yaml, the Lake in lake.yaml and the Function in function.yaml.",
+    "files": [],
+    "expected_behavior": [
+      "The Lake's location names the Bucket warehouse and the prefix lake, and the same prefix is one of the Lake's bindings.blob entries, with an alias",
+      "The prefix lake has the Lake sales as its owner (kind Lake), so the Lake does not wait with PrefixNotOwned",
+      "The Lake sets resources.cpu to 1 and resources.memory to 2Gi, and the Function binds the Lake through its bindings and declares it as the Function Spec tab requires",
+      "funcdctl apply --dry-run admits every file, or the answer reports the one it refuses and why"
+    ]
+  },
+  {
+    "id": "app-requires-hook",
+    "skills": [
+      "funcd"
+    ],
+    "dry_run": true,
+    "query": "In this empty folder, write the funcd manifest of an App named billing, version 3.1.0, that declares a KV store named invoices and a TypeScript Function named migrate (handler migrate.mjs). Each new revision must wait until the App ledger of the same namespace runs any 2.x version, and must call migrate before the revision's other parts change. Save it as app.yaml.",
+    "files": [],
+    "expected_behavior": [
+      "app.yaml is an App with spec.version 3.1.0, a kv entry invoices and a functions entry migrate",
+      "spec.requires holds an entry with app ledger and an npm-style version range such as ^2.0.0",
+      "spec.hooks.preApply holds an entry whose function is migrate, a functions entry of this App, not postApply",
+      "funcdctl apply --dry-run admits app.yaml, or the answer reports what it refuses and why"
+    ]
   }
 ]

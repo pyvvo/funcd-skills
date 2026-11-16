@@ -17,6 +17,8 @@ import argparse
 import json
 import os
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -33,14 +35,28 @@ RUN_TIMEOUT_S = 20 * 60
 GRADE_PROMPT = """You grade one run of an AI agent against a rubric. Read the agent's final answer below and the files in
 the current folder (the agent's working folder). For each rubric item, decide pass or fail from what you can see, and
 give one sentence of evidence. Judge a claim about funcd against funcd's docs, never from memory: the live pages
-listed at https://pyvvo.github.io/funcd/llms.txt (each link is a page's Markdown copy), or their copies in {refs}.
+listed at https://pyvvo.github.io/funcd/llms.txt (each link is a page's Markdown copy; a kind's fields are on its
+Spec tab, the page's spec.md), or the Usage pages' copies in {refs}.
 A claim that a page states passes. Answer with JSON only: {{"items": [{{"item": "...", "pass": true, "evidence": "..."}}]}}
 
 Rubric:
 {rubric}
 
-The agent's final answer:
+{dry_run}The agent's final answer:
 {answer}
+"""
+# funcdctl dev answers on its control port within a few seconds; past this, the dry-run check reports it as down.
+DEV_START_TIMEOUT_S = 60
+PROBE_FUNCTION = """apiVersion: funcd.io/v1alpha1
+kind: Function
+metadata:
+  name: probe
+  namespace: default
+  resourceGroup: rg1
+spec:
+  runtime: nodejs22
+  handler: handle
+  image: oci-layout:///mnt/funcd-deps/registry:probe
 """
 
 
@@ -54,6 +70,53 @@ def claude(args: list[str], cwd: Path, env: dict[str, str], timeout: int) -> dic
         return json.loads(res.stdout)
     except json.JSONDecodeError:
         return {"result": "", "error": (res.stderr or res.stdout)[-2000:]}
+
+
+def free_port() -> int:
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def dry_run(work: Path, funcdctl: Path, env: dict[str, str]) -> str:
+    """apply --dry-run of every YAML file the agent wrote, against a funcdctl dev of an empty folder."""
+    files = sorted(p for p in work.rglob("*") if p.suffix in (".yaml", ".yml") and "node_modules" not in p.parts)
+    if not files:
+        return "The agent wrote no YAML file."
+    # funcdctl dev refuses a folder with no Function, and a Function needs its handler and its contract.
+    empty = WORK / "dev-probe"
+    shutil.rmtree(empty, ignore_errors=True)
+    empty.mkdir()
+    (empty / "function.yaml").write_text(PROBE_FUNCTION)
+    (empty / "probe.mjs").write_text("export const handle = () => ({ ok: true });\n")
+    (empty / "probe.contract.yaml").write_text("runtime: nodejs22\ninput:\n  type: object\noutput:\n  type: object\n")
+    gport, cport = free_port(), free_port()
+    dev = subprocess.Popen([str(funcdctl), "dev", str(empty), "--gport", str(gport), "--cport", str(cport)],
+                           cwd=empty, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        deadline = time.monotonic() + DEV_START_TIMEOUT_S
+        while time.monotonic() < deadline:
+            try:
+                socket.create_connection(("127.0.0.1", cport), timeout=1).close()
+                break
+            except OSError:
+                time.sleep(0.5)
+        else:
+            return "funcdctl dev did not start, so no file was checked."
+        lines = []
+        for f in files:
+            res = subprocess.run([str(funcdctl), "--server", f"http://127.0.0.1:{cport}", "--token", "funcd-dev-token",
+                                  "apply", "--dry-run", "-f", str(f)], env=env, capture_output=True, text=True,
+                                 timeout=120)
+            out = (res.stdout + res.stderr).strip().replace(str(work) + "/", "")
+            lines.append(f"{f.relative_to(work)} (exit {res.returncode}): {out[:1500]}")
+        return "\n".join(lines)
+    finally:
+        dev.send_signal(signal.SIGINT)
+        try:
+            dev.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            dev.kill()
 
 
 def run_one(ev: dict, mode: str, args: argparse.Namespace, env: dict[str, str]) -> dict:
@@ -71,7 +134,12 @@ def run_one(ev: dict, mode: str, args: argparse.Namespace, env: dict[str, str]) 
     (OUT / f"{work.name}.run.json").write_text(json.dumps(run, indent=1))
     rubric = "\n".join(f"- {item}" for item in ev["expected_behavior"])
     refs = ROOT / "skills" / "funcd" / "references"
-    prompt = GRADE_PROMPT.format(rubric=rubric, answer=run.get("result", ""), refs=refs)
+    checked = ""
+    if ev.get("dry_run"):
+        checked = ("funcdctl apply --dry-run of each YAML file in the folder, against funcdctl dev (exit 0 and "
+                   "'would apply' mean the file was admitted):\n" + dry_run(work, args.funcdctl, env) + "\n\n")
+        (OUT / f"{work.name}.dry-run.txt").write_text(checked)
+    prompt = GRADE_PROMPT.format(rubric=rubric, answer=run.get("result", ""), refs=refs, dry_run=checked)
     grade = claude([prompt, "--model", args.grader, "--max-budget-usd", "0.5", "--add-dir", str(refs), *ISOLATION],
                    work, env, 600)
     try:
