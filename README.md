@@ -25,7 +25,7 @@ funcd-skills/
 ```
 
 `SKILL.md` holds the workflow and an index of the docs, in which every page links its Markdown copy. `references/`
-holds the Usage pages, for an agent with no network. `AGENTS.md` holds the same rules and index, for an agent that
+holds the Usage pages and funcdctl's command reference, for an agent with no network. `AGENTS.md` holds the same rules and index, for an agent that
 reads only `AGENTS.md`.
 
 ## Install

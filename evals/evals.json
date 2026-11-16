@@ -1,7 +1,9 @@
 [
   {
     "id": "kv-counter",
-    "skills": ["funcd"],
+    "skills": [
+      "funcd"
+    ],
     "query": "In this empty folder, write a TypeScript funcd Function named visits that counts the calls for each page it receives as {\"page\": \"...\"}, keeping the counts in a funcd KV store. Run it locally and show two calls for the same page.",
     "files": [],
     "expected_behavior": [
@@ -12,7 +14,9 @@
   },
   {
     "id": "route-auth",
-    "skills": ["funcd"],
+    "skills": [
+      "funcd"
+    ],
     "query": "I have a funcd Function named orders-api in the namespace shop. Write the manifest that serves it under /api on the host orders.example.com and only lets authenticated callers through. Tell me how to try it with funcdctl dev.",
     "files": [],
     "expected_behavior": [
@@ -23,7 +27,9 @@
   },
   {
     "id": "hourly-backup",
-    "skills": ["funcd"],
+    "skills": [
+      "funcd"
+    ],
     "query": "Back up the funcd Bucket uploads of the namespace default every hour to the S3 bucket s3://acme-backups on https://s3.eu-west-1.amazonaws.com, encrypted. Give me the manifests and the command that checks the schedule against a one-hour RPO.",
     "files": [],
     "expected_behavior": [
@@ -34,13 +40,28 @@
   },
   {
     "id": "route-pending",
-    "skills": ["funcd"],
+    "skills": [
+      "funcd"
+    ],
     "query": "funcdctl get route api -n default -o json shows phase Pending with the reason BackendNotFound. What does it mean and what do I do?",
     "files": [],
     "expected_behavior": [
       "Explains that the Function a rule names does not exist in the Route's namespace",
       "Says to create the Function, or to correct the rule's backend.function, after which the Route serves within the referent poll interval without being applied again",
       "Gives no cause or remedy that the Networking page does not state"
+    ]
+  },
+  {
+    "id": "dlq-replay",
+    "skills": [
+      "funcd"
+    ],
+    "query": "A funcd Sensor in the namespace shop could not deliver an event to its Function, which I have since fixed. Which funcdctl commands show the failed delivery and send it again?",
+    "files": [],
+    "expected_behavior": [
+      "Uses funcdctl eventing dlq list -n shop to list the dead letters, and dlq describe to read one",
+      "Uses funcdctl eventing dlq replay <id> -n shop, and says that a replay uses the live Sensor spec and removes the dead letter on success",
+      "Names no funcdctl command or flag that the funcdctl Spec tab does not list"
     ]
   }
 ]

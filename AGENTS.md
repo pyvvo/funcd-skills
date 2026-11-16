@@ -8,12 +8,44 @@ data: read its docs before writing a handler or a manifest, and never write a ki
 that a page does not show. Each page below has a Markdown copy at its URL; a kind's fields are on its Spec tab, the
 page's `spec.md`.
 
+- Point funcdctl at the server with `FUNCD_SERVER` and `FUNCD_TOKEN`, or `--server` and `--token`. Before using a
+  command or a flag, read its section of the
+  [funcdctl Spec tab](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md), or run
+  `funcdctl <command> --help`.
 - Run locally with `funcdctl dev --gport 8080 --cport 8081` in the folder of the resource files (the dev build of
   funcdctl, and Node.js or Python on the `PATH`).
-- Check every manifest with `funcdctl --server http://127.0.0.1:8081 --token funcd-dev-token apply --dry-run -f <file>`
-  and fix what it names until it prints `would apply`.
+- Point the other commands at it with `export FUNCD_SERVER=http://127.0.0.1:8081 FUNCD_TOKEN=funcd-dev-token`.
+- Check every manifest with `funcdctl apply --dry-run -f <file>` and fix what it names until it prints `would apply`.
 - Read the status with `get <kind> <name> -n default -o json` until `Ready` is `True`; the page's Status table explains
   every other reason.
+
+## funcdctl commands (v0.45.0)
+
+| Command | What it does |
+| --- | --- |
+| `funcdctl app` | Manage Apps (render/deploy/delete/lock/history/rollback/pause/resume/retry) |
+| `funcdctl apply` | Apply a manifest of one or more YAML documents, or JSON (- for stdin) |
+| `funcdctl backup` | Platform backup: status (the daemon's report), verify (off the box) and plan (objectives into settings) |
+| `funcdctl bench` | Load-test a deployed function's data-plane endpoint (throughput + tail latency) |
+| `funcdctl delete` | Delete an object |
+| `funcdctl describe` | Get an object (or list) as full JSON (get -o json) |
+| `funcdctl dev` | funcdctl dev runs a folder's resource files from their local builds (dev build only) |
+| `funcdctl eventing` | Eventing operations (dlq: inspect/replay/discard dead-lettered Sensor actions) |
+| `funcdctl get` | List a kind, or get one object (table; -o json for the object) |
+| `funcdctl hold` | The platform hold a restore or safe mode leaves (status/release) |
+| `funcdctl index` | Combine per-platform pushes (push --platform) into one multi-arch OCI image index (prints <ref>@<digest>) |
+| `funcdctl inspect` | Print a function artifact's I/O contract from its OCI metadata (no bundle pull, no run) |
+| `funcdctl kvstore` | Manage KV stores (handover) |
+| `funcdctl login` | Store registry credentials |
+| `funcdctl logout` | Remove stored credentials for a registry |
+| `funcdctl logs` | Print a function's logs (tenant-scoped to your identity) |
+| `funcdctl plugin` | Plugins: `funcdctl <name>` runs funcdctl-<name> from PATH when <name> is no built-in command |
+| `funcdctl pull` | Fetch an artifact by digest into a dir (verifies the digest) |
+| `funcdctl push` | Package a function (a file or a bundle directory) — or, with --site, a prebuilt static web app, or with --template, an App template — as an OCI artifact and push it (prints <ref>@<digest>) |
+| `funcdctl quarantine` | The data a start moved aside instead of deleting it, as no object named it (return) |
+| `funcdctl types` | Generate FuncInput/FuncOutput + binding types from a contract file and its Function (.py / .d.ts; DX-only) |
+| `funcdctl volume` | Function volume operations (delete a retained volume) |
+| `funcdctl workflow` | Manage workflow runs (run/runs/pause/resume/cancel/describe/logs/replay) |
 
 ## Docs index (v0.45.0)
 

@@ -8,12 +8,20 @@ data: read its docs before writing a handler or a manifest, and never write a ki
 that a page does not show. Each page below has a Markdown copy at its URL; a kind's fields are on its Spec tab, the
 page's `spec.md`.
 
+- Point funcdctl at the server with `FUNCD_SERVER` and `FUNCD_TOKEN`, or `--server` and `--token`. Before using a
+  command or a flag, read its section of the
+  [funcdctl Spec tab](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md), or run
+  `funcdctl <command> --help`.
 - Run locally with `funcdctl dev --gport 8080 --cport 8081` in the folder of the resource files (the dev build of
   funcdctl, and Node.js or Python on the `PATH`).
-- Check every manifest with `funcdctl --server http://127.0.0.1:8081 --token funcd-dev-token apply --dry-run -f <file>`
-  and fix what it names until it prints `would apply`.
+- Point the other commands at it with `export FUNCD_SERVER=http://127.0.0.1:8081 FUNCD_TOKEN=funcd-dev-token`.
+- Check every manifest with `funcdctl apply --dry-run -f <file>` and fix what it names until it prints `would apply`.
 - Read the status with `get <kind> <name> -n default -o json` until `Ready` is `True`; the page's Status table explains
   every other reason.
+
+## funcdctl commands ({{RELEASE}})
+
+{{FUNCDCTL}}
 
 ## Docs index ({{RELEASE}})
 
