@@ -1,0 +1,16 @@
+{
+  "name": "funcd",
+  "description": "Build, run and deploy Functions, Apps, Sites and Workflows on funcd with funcdctl, from funcd's docs.",
+  "version": "0.1.0",
+  "author": {
+    "name": "The funcd Authors"
+  },
+  "homepage": "https://pyvvo.github.io/funcd/",
+  "repository": "https://github.com/pyvvo/funcd-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "funcd",
+    "funcdctl",
+    "serverless"
+  ]
+}

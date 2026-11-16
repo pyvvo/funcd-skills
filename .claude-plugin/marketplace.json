@@ -1,0 +1,14 @@
+{
+  "name": "funcd-skills",
+  "description": "Agent skills for building on funcd",
+  "owner": {
+    "name": "The funcd Authors"
+  },
+  "plugins": [
+    {
+      "name": "funcd",
+      "source": "./",
+      "description": "Build, run and deploy Functions, Apps, Sites and Workflows on funcd with funcdctl, from funcd's docs."
+    }
+  ]
+}
