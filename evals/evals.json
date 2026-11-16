@@ -35,7 +35,7 @@
     "expected_behavior": [
       "Writes a BackupSchedule whose schedule, scope, target.url, target.credentialsSecret and encryption.recipients follow the disaster recovery Spec tab, with at least two age recipients",
       "Writes the Secret that holds the S3 key pair under AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY",
-      "Uses funcdctl backup plan schedule with --rpo, and does not invent a flag or a field"
+      "Gives funcdctl backup plan schedule with --rpo 1h as the check, and invents no flag or field; it may say that the planner picks a schedule of at most half the RPO"
     ]
   },
   {
@@ -47,8 +47,8 @@
     "files": [],
     "expected_behavior": [
       "Explains that the Function a rule names does not exist in the Route's namespace",
-      "Says to create the Function, or to correct the rule's backend.function, after which the Route serves within the referent poll interval without being applied again",
-      "Gives no cause or remedy that the Networking page does not state"
+      "Says to create the Function, after which the Route serves within the referent poll interval without being applied again, or to correct the rule's backend.function and apply the Route",
+      "Gives no cause or remedy that contradicts the Networking page"
     ]
   },
   {

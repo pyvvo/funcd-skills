@@ -109,7 +109,11 @@ lists every command with its usage, its text and its flags, or run `funcdctl <co
 
 ## Rules
 
-- Generate a handler's input and output types from its contract with `funcdctl types`; do not write them by hand.
+- When funcdctl computes a value, run it instead of writing the value by hand: `funcdctl types` for a handler's input
+  and output types, `funcdctl backup plan schedule --rpo` for a BackupSchedule's `schedule`, `funcdctl app render` for
+  what an App deploys.
+- Explain a status reason or an error with its row of the page's Status or CLI errors table, and stop there: do not
+  add causes or remedies that the row does not give.
 - A field that the Spec tab marks as set by funcd (a `status`, a Revision) is never written in a manifest.
 - On a funcd server, use the server's URL and a token the operator gave; `funcd-dev-token` works only on loopback.
 - When a page and your memory disagree, the page wins. When the page says nothing, say so rather than guess.

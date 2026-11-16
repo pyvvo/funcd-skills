@@ -16,8 +16,10 @@ page's `spec.md`.
   funcdctl, and Node.js or Python on the `PATH`).
 - Point the other commands at it with `export FUNCD_SERVER=http://127.0.0.1:8081 FUNCD_TOKEN=funcd-dev-token`.
 - Check every manifest with `funcdctl apply --dry-run -f <file>` and fix what it names until it prints `would apply`.
+- When funcdctl computes a value (`funcdctl types`, `funcdctl backup plan schedule --rpo`, `funcdctl app render`),
+  run it instead of writing the value by hand.
 - Read the status with `get <kind> <name> -n default -o json` until `Ready` is `True`; the page's Status table explains
-  every other reason.
+  every other reason; explain a reason with its row, and add no cause the row does not give.
 
 ## funcdctl commands (v0.45.0)
 
