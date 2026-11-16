@@ -13,7 +13,7 @@ page's `spec.md`.
   [funcdctl Spec tab](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md), or run
   `funcdctl <command> --help`.
 - Run locally with `funcdctl dev --gport 8080 --cport 8081` in the folder of the resource files (the dev build of
-  funcdctl, and Node.js or Python on the `PATH`).
+  funcdctl, and Node.js on the `PATH`, or Python 3.12 or later as `python3` or through `FUNCD_PYTHON`).
 - Point the other commands at it with `export FUNCD_SERVER=http://127.0.0.1:8081 FUNCD_TOKEN=funcd-dev-token`.
 - Check every manifest with `funcdctl apply --dry-run -f <file>` and fix what it names until it prints `would apply`.
 - When funcdctl computes a value (`funcdctl types`, `funcdctl backup plan schedule --rpo`, `funcdctl app render`),

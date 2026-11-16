@@ -36,8 +36,8 @@ for a client that calls the HTTP API itself: funcdctl covers its operations.
 [funcd-functions](https://github.com/pyvvo/funcd-functions) holds Apps. Copy the closest one rather than starting
 from nothing.
 
-**4. Run locally.** Install the dev build of funcdctl (the Install page) and put Node.js, or Python for a Python
-Function, on the `PATH`. Then, in the folder that holds the resource files:
+**4. Run locally.** Install the dev build of funcdctl (the Install page) and put Node.js on the `PATH`, or, for a
+Python Function, Python 3.12 or later as `python3` (or set `FUNCD_PYTHON` to its path). Then, in the folder that holds the resource files:
 
 ```sh
 funcdctl dev --gport 8080 --cport 8081

@@ -53,7 +53,7 @@ Skills.
 An agent that reads only `AGENTS.md`: copy [AGENTS.md](AGENTS.md) into the project, or add its sections to the
 project's own `AGENTS.md` or `CLAUDE.md`.
 
-The skill runs `funcdctl`, in its dev build, and Node.js or Python. The
+The skill runs `funcdctl`, in its dev build, and Node.js, or Python 3.12 or later (`python3` or `FUNCD_PYTHON`). The
 [Install](https://pyvvo.github.io/funcd/docs/get-started/install) page installs funcdctl.
 
 ## Keep it current
