@@ -298,6 +298,11 @@ def handle(context: FunctionContext, event: CloudEvent[FuncInput]) -> FuncOutput
     return {"emitted": emitted}
 ```
 
+`funcdctl dev` runs the handler where it is. To bundle it for `funcdctl push`,
+[`funcd-bundle`](https://github.com/pyvvo/funcd-python/tree/main/bundle) writes `dist/<name>/` with the locked
+dependencies and the contract. It needs a running Docker daemon for its import check, whenever the handler imports a
+bundled dependency (`--no-check` skips it), and for `--hermetic`.
+
 ## Call another Function
 
 A Function calls another of its [namespace](https://pyvvo.github.io/funcd/docs/platform/tenancy-and-limits/namespaces.md) over a **link**
