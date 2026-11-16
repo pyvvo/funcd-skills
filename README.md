@@ -46,6 +46,10 @@ npx skills add pyvvo/funcd-skills
 Or copy `skills/funcd/` into the agent's skills folder, such as `.agents/skills/` of a project for Codex or
 `~/.claude/skills/` for Claude Code.
 
+Claude on claude.ai or the Claude app: download `funcd.zip` from the
+[latest release](https://github.com/pyvvo/funcd-skills/releases/latest), then upload it under Settings, Capabilities,
+Skills.
+
 An agent that reads only `AGENTS.md`: copy [AGENTS.md](AGENTS.md) into the project, or add its sections to the
 project's own `AGENTS.md` or `CLAUDE.md`.
 
