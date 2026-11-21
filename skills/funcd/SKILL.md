@@ -3,7 +3,7 @@ name: funcd
 description: Builds, runs and deploys workloads on funcd, the single-binary serverless platform, with funcdctl — Functions and their handlers in TypeScript or Python, Apps, Sites, Workflows, and the resources they use (KVStore, Bucket, SQLDatabase, Lake, Secret, ConfigMap, EventSource, Sensor, Route, EgressPolicy, Identity, RolesAssignment, Policy, BackupSchedule, Restore). Use when the user writes a funcd handler or manifest, runs or debugs funcdctl dev, funcdctl apply, get or logs, reads a funcd status reason, or mentions funcd or funcdctl.
 license: Apache-2.0
 metadata:
-  docs-release: "v0.45.0"
+  docs-release: "v0.46.0"
   docs: "https://pyvvo.github.io/funcd/llms.txt"
 ---
 
@@ -161,6 +161,9 @@ The docs describe funcd's latest release; `metadata.docs-release` names the rele
   - Lake
     - [Lake](https://pyvvo.github.io/funcd/docs/develop/services/lake.md): Declare a Lake over a Bucket prefix, bind it to a Function, and create and query its tables with SQL from the handler.
     - [Lake spec and handler API](https://pyvvo.github.io/funcd/docs/develop/services/lake/spec.md): Every field of Lake, then the methods a handler calls on ctx.lake.
+  - Add-ons
+    - [Add-ons](https://pyvvo.github.io/funcd/docs/develop/services/addons.md): Register an add-on built outside funcd, such as rauthy, declare its objects, back them up and sign users in through it.
+    - [Build an add-on](https://pyvvo.github.io/funcd/docs/develop/services/addons/build.md): Package an engine built outside funcd as an add-on, with rauthy and its funcdctl plugin as the example.
   - Secrets
     - [Secrets](https://pyvvo.github.io/funcd/docs/develop/services/secrets.md): Create a Secret, bind it in a Function, read its values, and control which Functions can change its values.
     - [Secret spec and handler API](https://pyvvo.github.io/funcd/docs/develop/services/secrets/spec.md): Every field of Secret, then the methods a handler calls on ctx.secret.
@@ -170,7 +173,7 @@ The docs describe funcd's latest release; `metadata.docs-release` names the rele
 - Security and networking
   - Security
     - [Security](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md): Create an Identity for a client outside funcd, give roles to it and to Functions at a scope, and allow or forbid requests with a Cedar Policy.
-    - [Identity, Role, RolesAssignment and Policy spec](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md): Every field of Identity, Role, RolesAssignment and Policy: its type, its limits and its description.
+    - [Identity, Role, RolesAssignment, Policy and OIDCProvider spec](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md): Every field of Identity, Role, RolesAssignment, Policy and OIDCProvider: its type, its limits and its description.
   - Networking
     - [Networking](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking.md): Serve a Function at a path and a host of its own with a Route, ask its callers to authenticate, and allow a Function's outbound connections with an EgressPolicy.
     - [Route and EgressPolicy spec](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md): Every field of Route and EgressPolicy: its type, its limits and its description.
@@ -185,6 +188,7 @@ The docs describe funcd's latest release; `metadata.docs-release` names the rele
   - funcdctl
     - [funcdctl](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl.md): The funcd CLI, which applies resources, reads their state and logs, and runs Functions on the local machine.
     - [funcdctl](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md): Every funcdctl command with its usage line, its text and its flags.
+    - [Plugins](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/plugins.md): A funcdctl plugin is an executable named funcdctl-<name> on PATH, which funcdctl runs as a command of its own.
 - [Common definitions](https://pyvvo.github.io/funcd/docs/develop/common-definitions.md): The definitions every kind shares: its metadata and the conditions of its status.
 - [Examples](https://pyvvo.github.io/funcd/docs/develop/examples.md): The repositories that hold funcd's examples, from single functions to whole Apps.
 - [API reference](https://pyvvo.github.io/funcd/docs/api.md): every operation of the control plane API and what it answers.
@@ -207,6 +211,8 @@ The Usage pages, as they were at `docs-release`. Read one only when the URL abov
 - [Bucket](references/services-bucket.md)
 - [SQL](references/services-sql.md)
 - [Lake](references/services-lake.md)
+- [Add-ons](references/services-addons.md)
+- [Build an add-on](references/services-addons-build.md)
 - [Secrets](references/services-secrets.md)
 - [Events](references/services-events.md)
 - [Security](references/security-and-networking-security.md)
@@ -214,6 +220,7 @@ The Usage pages, as they were at `docs-release`. Read one only when the URL abov
 - [Namespaces and resource groups](references/tenancy-and-limits-namespaces.md)
 - [Disaster recovery](references/disaster-recovery.md)
 - [funcdctl](references/tools-funcdctl.md)
+- [Plugins](references/tools-funcdctl-plugins.md)
 - [Common definitions](references/common-definitions.md)
 - [Examples](references/examples.md)
 - [funcdctl commands](references/funcdctl-commands.md)
