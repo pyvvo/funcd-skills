@@ -315,6 +315,9 @@ declared under [`spec.bindings.links`](https://pyvvo.github.io/funcd/docs/develo
 - The target must exist when the caller is applied, and a link cannot close a cycle.
 - A target that serves HTTP is called with [`ctx.fetch`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#handler-api), in TypeScript only; `ctx.invoke`
   refuses it.
+- An add-on object's engine is called through funcd, under an alias of
+  [`spec.bindings.addon`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecbindings), with `ctx.addon.fetch`:
+  [Call its engine from a Function](https://pyvvo.github.io/funcd/docs/develop/services/addons.md#call-its-engine-from-a-function).
 
 In the TypeScript example fn-to-fn, `front` calls `greeter` over this link
 ([complete file](https://github.com/pyvvo/funcd/blob/main/api/types/v1alpha1/examples/function/link.yaml)); the Python
