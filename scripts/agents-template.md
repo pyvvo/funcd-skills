@@ -10,7 +10,7 @@ page's `spec.md`.
 
 - Point funcdctl at the server with `FUNCD_SERVER` and `FUNCD_TOKEN`, or `--server` and `--token`. Before using a
   command or a flag, read its section of the
-  [funcdctl Spec tab](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md), or run
+  [funcdctl Spec tab](https://funcd.dev/docs/develop/tools/funcdctl/spec.md), or run
   `funcdctl <command> --help`.
 - Run locally with `funcdctl dev --gport 8080 --cport 8081` in the folder of the resource files (the dev build of
   funcdctl, and Node.js on the `PATH`, or Python 3.12 or later as `python3` or through `FUNCD_PYTHON`).

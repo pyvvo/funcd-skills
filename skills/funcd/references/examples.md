@@ -1,6 +1,6 @@
 # Examples
 
-Source: https://pyvvo.github.io/funcd/docs/develop/examples.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/examples.md (the Markdown copy of the page; prefer it when the network is up).
 
 
 The repositories that hold funcd's examples, from single functions to whole Apps.

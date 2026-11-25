@@ -1,6 +1,6 @@
 # Disaster recovery
 
-Source: https://pyvvo.github.io/funcd/docs/develop/disaster-recovery.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/disaster-recovery.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -25,11 +25,11 @@ Back up the stores of a namespace to an S3 bucket on a schedule, and restore a B
 
 A **BackupSchedule** copies a namespace's stores to an S3 bucket, its **target**, on a cron schedule. Each copy is a
 **Backup**; a **Restore** loads one into empty stores or back into its own
-([how it works](https://pyvvo.github.io/funcd/docs/platform/disaster-recovery.md)).
+([how it works](https://funcd.dev/docs/platform/disaster-recovery.md)).
 
-The example backs up the Bucket `lakehouse` of [s3-roundtrip](https://pyvvo.github.io/funcd/docs/develop/services/bucket.md) into an empty Bucket,
+The example backs up the Bucket `lakehouse` of [s3-roundtrip](https://funcd.dev/docs/develop/services/bucket.md) into an empty Bucket,
 `lakehouse-copy`. Install the
-[dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`. `--s3port` starts
+[dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`. `--s3port` starts
 funcd's S3 gateway, which serves the Buckets on port 8082.
 
 Its target, `backups`, is a Bucket of the same platform; a real target is a bucket of another S3 provider, since a
@@ -97,13 +97,13 @@ spec:
       - age1263g0rath75xcgy9wh9cd6p9tpdn6wq35t5fa5pajnna4u7tgyhsxd384c
 ```
 
-- [`schedule`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespec) is a cron expression, read in `timeZone`, else UTC; each of its times is a
+- [`schedule`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespec) is a cron expression, read in `timeZone`, else UTC; each of its times is a
   **slot**, at which the schedule creates a Backup.
-- [`scope`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespecscope) names the stores to copy.
-- [`target.url`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespectarget) is an `s3://` URL with the S3 client's options as its query.
-- [`target.credentialsSecret`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespectarget) holds the S3 key pair under `AWS_ACCESS_KEY_ID` and
+- [`scope`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespecscope) names the stores to copy.
+- [`target.url`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespectarget) is an `s3://` URL with the S3 client's options as its query.
+- [`target.credentialsSecret`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespectarget) holds the S3 key pair under `AWS_ACCESS_KEY_ID` and
   `AWS_SECRET_ACCESS_KEY`; here, the dev key pair of `s3-roundtrip`, which protects nothing.
-- [`encryption.recipients`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespecencryption) lists [age](https://github.com/FiloSottile/age/blob/main/README.md)
+- [`encryption.recipients`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespecencryption) lists [age](https://github.com/FiloSottile/age/blob/main/README.md)
   public keys, **recipients**; the private key of any one, its **identity**, opens the copy. These are test keys whose
   identity is published: for real copies, create new ones with `age-keygen`.
 
@@ -176,16 +176,16 @@ spec:
       as: lakehouse-copy
 ```
 
-- [`backup`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#restorespec) names the Backup; the Restore waits while it is `Pending` or `Running`.
-- [`source.credentialsSecret`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#restorespecsource) holds the key pair that reads the copy from the Backup's
+- [`backup`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#restorespec) names the Backup; the Restore waits while it is `Pending` or `Running`.
+- [`source.credentialsSecret`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#restorespecsource) holds the key pair that reads the copy from the Backup's
   `status.target`.
-- [`source.identitySecret`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#restorespecsource) holds an identity under `AGE_IDENTITY`.
-- Each [`members`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#restorespecmembers) entry names a member by `kind` and `name`, and `as` names an existing,
+- [`source.identitySecret`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#restorespecsource) holds an identity under `AGE_IDENTITY`.
+- Each [`members`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#restorespecmembers) entry names a member by `kind` and `name`, and `as` names an existing,
   empty store of the same kind.
 
 ## Choose what a Backup copies
 
-A [`scope`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespecscope) takes one of three forms: name lists under `kvStores`, `buckets`,
+A [`scope`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespecscope) takes one of three forms: name lists under `kvStores`, `buckets`,
 `lakes`, `databases` and `volumes` (a Function's local volume, as `<function>/<name>`); `app`, an App's stores and
 volumes; or `resourceGroup`, a resource group's stores, without volumes. funcd resolves it when each Backup starts:
 
@@ -196,11 +196,11 @@ volumes; or `resourceGroup`, a resource group's stores, without volumes. funcd r
   try. A SQL database whose engine is not `Ready` fails it with `EngineNotReady`.
 - A volume is read file by file while its Function runs, so its copy is not a single point in time.
 
-A Lake member can load at a new location with [`asLocation`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#restorespecmembersaslocation) instead of `as`:
+A Lake member can load at a new location with [`asLocation`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#restorespecmembersaslocation) instead of `as`:
 an empty prefix of a Bucket of the namespace where no Lake is located. Then create a
-[Lake](https://pyvvo.github.io/funcd/docs/develop/services/lake.md) there, which reads the restored files and catalog.
+[Lake](https://funcd.dev/docs/develop/services/lake.md) there, which reads the restored files and catalog.
 
-An App declares its own schedules under [`spec.backupSchedules`](https://pyvvo.github.io/funcd/docs/develop/workloads/app/spec.md#appspecbackupschedules);
+An App declares its own schedules under [`spec.backupSchedules`](https://funcd.dev/docs/develop/workloads/app/spec.md#appspecbackupschedules);
 an entry with an empty `scope` backs up that App.
 
 ## Plan a schedule from recovery objectives
@@ -217,15 +217,15 @@ The result holds `schedule: "*/30 * * * *"` and `ttl: 168h`:
 
 - `--rpo` runs a Backup once in each period that divides the hour or the day and is at most half the RPO, and at
   least daily. An RPO under 2 minutes is refused.
-- `--keep` sets the [`ttl`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespec): how long each Backup's record, which a Restore needs, is
+- `--keep` sets the [`ttl`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespec): how long each Backup's record, which a Restore needs, is
   kept.
 
-Pipe the result to `funcdctl apply -f -`. The [reference](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-backup-plan) lists the
+Pipe the result to `funcdctl apply -f -`. The [reference](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-backup-plan) lists the
 other flags, such as `--rto`, `--size` and `--speed`.
 
 ## Restore stores in place
 
-A member with [`inPlace: true`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#restorespecmembers) instead of `as` replaces its store's data; a volume only
+A member with [`inPlace: true`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#restorespecmembers) instead of `as` replaces its store's data; a volume only
 when empty or named by its Function's `DataMissing`. It needs an admin, and runs one at a time per namespace:
 
 1. `Pending`: it waits for its Backup, then for an **export**, a Backup of the schedule named `<restore>-before`
@@ -238,12 +238,12 @@ when empty or named by its Function's `DataMissing`. It needs an admin, and runs
 
 A failure after the hold keeps the hold. A failed load clears what the loads began, so the old data is only in the
 export; a non-empty volume fails with `NotEmpty`. A stop during a load ends it `Interrupted`, clearing nothing. Check
-the stores, then lift the hold with [`funcdctl hold release --namespace`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-hold-release)
+the stores, then lift the hold with [`funcdctl hold release --namespace`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-hold-release)
 (admin only, refused while the Restore runs). No new in-place Restore runs while it stands.
 
 ## Bring a namespace back after a host loss
 
-After the operator's `funcd restore run` ([Platform page](https://pyvvo.github.io/funcd/docs/platform/disaster-recovery.md#after-a-host-loss)),
+After the operator's `funcd restore run` ([Platform page](https://funcd.dev/docs/platform/disaster-recovery.md#after-a-host-loss)),
 each namespace with a BackupSchedule stays held: its Functions refuse calls. Each schedule lists its target and
 records every whole slot copy made after the platform backup as a `Succeeded` Backup; Backups made by hand and exports
 get no record. Until that listing succeeds, the schedule's `TargetSynced` condition is `False` (`PlatformRestored`, or
@@ -256,12 +256,12 @@ An admin then applies an in-place Restore of the newest Backup and, once it has 
 
 - A namespace viewer reads BackupSchedules, Backups and Restores; a developer also creates and deletes them and
   changes a schedule; an admin does this everywhere
-  ([`auth.credentials`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml)). An in-place Restore and
+  ([`auth.credentials`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml)). An in-place Restore and
   `funcdctl hold release --namespace` need the permission to update the Namespace.
 - A Backup's or a Restore's spec cannot change: create another one.
 - Backups and Restores ignore the namespace's RolesAssignments and Policies. The target checks the key pairs: the
   schedule's needs put and list, the Restore's get and list. In the example, `s3-roundtrip` owns the prefix `default`
-  of `backups`, and reads it through `Blob Data Reader` ([Security](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md)).
+  of `backups`, and reads it through `Blob Data Reader` ([Security](https://funcd.dev/docs/develop/security-and-networking/security.md)).
 
 ## Limits and quotas
 
@@ -273,8 +273,8 @@ An admin then applies an in-place Restore of the newest Backup and, once it has 
 - A Backup copies at most `workloadBackup.maxCopyMembers` members (1024); a target listing reads at most
   `workloadBackup.maxListedKeys` keys (1048576) and `workloadBackup.maxListedKeySize` bytes of names (256 MiB).
 
-See the server's [Spec](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml) for `workloadBackup`, and this page's
-[Spec](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md) for field ranges.
+See the server's [Spec](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml) for `workloadBackup`, and this page's
+[Spec](https://funcd.dev/docs/develop/disaster-recovery/spec.md) for field ranges.
 
 ## Data storage
 
@@ -315,12 +315,12 @@ place, its export), `Running` while it checks and loads, then `Succeeded` or `Fa
 
 A BackupSchedule's status also gives `lastScheduleTime`, `lastSuccessTime`, `earliestRestorePoint` (the oldest
 point a Restore can reach) and `active`. `rpoRisk` turns `true` when the schedule falls behind
-([Spec](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulestatus)), never while paused, and funcd logs `workload backup rpo at risk`.
+([Spec](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulestatus)), never while paused, and funcd logs `workload backup rpo at risk`.
 
 ## Changes and deletion
 
 - A BackupSchedule change applies at once: each Backup reads the scope, target and recipients when it starts.
-- [`paused: true`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespec) stops the slots; a Backup made by hand still runs. Slots missed while
+- [`paused: true`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespec) stops the slots; a Backup made by hand still runs. Slots missed while
   paused, stopped or held collapse into one Backup, and a slot that comes while a Backup is active creates none.
 - Deleting a Backup deletes its record, not its copy, and no Restore can name it after. A Backup outlives its schedule
   and App until `expireTime`, but an in-place Restore of it fails with `ScheduleNotFound`.
@@ -341,7 +341,7 @@ These local errors stop a command before any server answers:
 - `funcdctl dev` derives each Function's S3 key pair from a constant and prints the first one in its banner; a server
   derives its own, so the example's Secret works only under `funcdctl dev`.
 - Its token, `funcd-dev-token`, is a developer of `default`: in-place Restores and `hold release` are refused.
-- Everything stays in memory unless [`--persist`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev) keeps it in `.funcd-dev`
+- Everything stays in memory unless [`--persist`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev) keeps it in `.funcd-dev`
   (or `--persist-to`); delete that folder to start over.
 
 ## Examples

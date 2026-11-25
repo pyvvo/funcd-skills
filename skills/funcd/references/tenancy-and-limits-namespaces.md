@@ -1,6 +1,6 @@
 # Namespaces and resource groups
 
-Source: https://pyvvo.github.io/funcd/docs/develop/tenancy-and-limits/namespaces.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/tenancy-and-limits/namespaces.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -22,11 +22,11 @@ Delete the resources of a resource group as one, set the defaults of a namespace
 
 ## Usage
 
-A [namespace](https://pyvvo.github.io/funcd/docs/platform/tenancy-and-limits/namespaces.md) keeps its resources apart from other namespaces', and
+A [namespace](https://funcd.dev/docs/platform/tenancy-and-limits/namespaces.md) keeps its resources apart from other namespaces', and
 a resource group gathers the resources that belong together, such as one application's.
 
 The first example deletes the log-burst Function through its group `rg1`. Install the
-[dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`. Clone both
+[dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`. Clone both
 repositories into one folder and start the example:
 
 ```console
@@ -43,7 +43,7 @@ $ curl -s -X POST -H 'content-type: application/json' -d '{}' http://127.0.0.1:8
 {"emitted":115}
 ```
 
-Each resource names its group in [`metadata.resourceGroup`](https://pyvvo.github.io/funcd/docs/develop/common-definitions.md#objectmeta). Naming a group
+Each resource names its group in [`metadata.resourceGroup`](https://funcd.dev/docs/develop/common-definitions.md#objectmeta). Naming a group
 creates no **ResourceGroup**, but funcd deletes a group only through one of its name:
 
 ```yaml
@@ -94,21 +94,21 @@ A **Namespace** holds the settings of the namespace of its name: whether its Fun
 addresses, whether its edge asks callers to authenticate, and its volume budget. It belongs to no namespace.
 
 Only an admin acts on a Namespace, so these tasks need a funcd server on Linux with an admin entry in
-[`auth.credentials`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), a `tokenFile` with `role: admin`. `auth.credentials`
+[`auth.credentials`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), a `tokenFile` with `role: admin`. `auth.credentials`
 replaces `auth.token`: funcd refuses to start with both, and every other credential needs its own entry listing its
 `namespaces`.
 
 Each task applies a file of funcd's repository from a clone's root, with the admin token in `ADMIN_TOKEN`, to a server
 whose API listens at `127.0.0.1:8080`. Replace each `registry.example.com` image with an
-[artifact](https://pyvvo.github.io/funcd/docs/platform/workloads/artifacts.md) that the server can pull, as
-[`funcdctl push`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-push) prints. Calls go to the edge at `server.dataPlaneAddr`,
+[artifact](https://funcd.dev/docs/platform/workloads/artifacts.md) that the server can pull, as
+[`funcdctl push`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-push) prints. Calls go to the edge at `server.dataPlaneAddr`,
 which takes a free port by default, so set one, such as `127.0.0.1:8081`, and name the namespace's host in the `Host`
 header, such as `-H 'Host: shop.localhost'`.
 
 ## Turn off the Functions' own addresses
 
 A Function answers at `/function/<name>`, and a Site at `/site/<name>`, or at its `spec.ingress` host and path. A
-Namespace whose [`defaultExposure`](https://pyvvo.github.io/funcd/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec) is `explicit` turns these addresses off for each Function
+Namespace whose [`defaultExposure`](https://funcd.dev/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec) is `explicit` turns these addresses off for each Function
 and Site that does not set `spec.ingress.enabled`:
 
 ```yaml
@@ -122,7 +122,7 @@ spec:
 
 The [complete file](https://github.com/pyvvo/funcd/blob/main/api/types/v1alpha1/examples/namespaces/namespace.yaml)
 also holds `catalog`, which turns its address on again with
-[`spec.ingress.enabled`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecingress):
+[`spec.ingress.enabled`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecingress):
 
 ```yaml
 apiVersion: funcd.io/v1alpha1
@@ -165,11 +165,11 @@ On `shop.localhost`:
 - A call over a link still reaches `orders`.
 
 In the namespace `default`, which has no host, `explicit` also turns off each Route without a host, with
-[`HostRequired`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking.md#choose-the-host-of-a-route).
+[`HostRequired`](https://funcd.dev/docs/develop/security-and-networking/networking.md#choose-the-host-of-a-route).
 
 ## Set the default authentication of a namespace
 
-A Namespace whose [`edgeDefaults.auth.mode`](https://pyvvo.github.io/funcd/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespecedgedefaultsauth) is `authenticated` asks for a token
+A Namespace whose [`edgeDefaults.auth.mode`](https://funcd.dev/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespecedgedefaultsauth) is `authenticated` asks for a token
 on every address of the namespace that sets no mode of its own; a mode set by a Function, a Route or a rule wins:
 
 ```yaml
@@ -215,27 +215,27 @@ A call to `/function/invoices` on `billing.localhost` gets:
 
 `/function/status` answers with no token. A missing or turned-off address gets the same 401 before its 404, so a caller
 without a token cannot learn which names exist. See also
-[Ask callers to authenticate](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking.md#ask-callers-to-authenticate).
+[Ask callers to authenticate](https://funcd.dev/docs/develop/security-and-networking/networking.md#ask-callers-to-authenticate).
 
 ## Reach a namespace at its own host
 
 This needs a funcd server with a credential that acts in the namespace, but no Namespace. Every namespace other than
 `default` has the host `<namespace>.<server.baseDomain>`, such as `shop.localhost` with the default
-[`server.baseDomain`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml). On it:
+[`server.baseDomain`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml). On it:
 
 - A Route of the namespace with no host answers on that host alone, and its `status.host` names it.
 - `/function/<name>` reaches the namespace's Function, on the host and every name under it.
 - A Route whose host is a name under it, such as `api.shop.localhost`, answers there.
 
 On a host that names no namespace, such as `localhost`, `/function/<name>` goes to the namespace of the
-`X-Funcd-Namespace` header, else to `default`. [Choose the host of a Route](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking.md#choose-the-host-of-a-route)
+`X-Funcd-Namespace` header, else to `default`. [Choose the host of a Route](https://funcd.dev/docs/develop/security-and-networking/networking.md#choose-the-host-of-a-route)
 gives the other rules.
 
 ## Limit the volume space of a namespace
 
-A Namespace's [`volumeBudget`](https://pyvvo.github.io/funcd/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec), or `volumeBudgetBytes`, limits the volume space that its
+A Namespace's [`volumeBudget`](https://funcd.dev/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec), or `volumeBudgetBytes`, limits the volume space that its
 Functions reserve: each local volume from its apply until its removal, and each emptyDir while its worker exists.
-[Volumes](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecvolumes) need `runtime.mode: containerd` and a
+[Volumes](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecvolumes) need `runtime.mode: containerd` and a
 `volumes.capacity`:
 
 ```yaml
@@ -262,12 +262,12 @@ The credential's role decides, as for every object of the API:
 
 Elsewhere, a request gets 403, such as `list Function in "shop" denied: developer not scoped to namespace "shop"`. A
 forced delete deletes each member with the caller's credential. What a Function or an Identity may do inside a
-namespace is on the [Security](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md#access) page.
+namespace is on the [Security](https://funcd.dev/docs/develop/security-and-networking/security.md#access) page.
 
 ## Limits and quotas
 
 - A namespace holds at most 100 KVStores, 100 Buckets and 20 SQL databases;
-  [`kvstore.maxStoresPerNamespace`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml) and `sql.maxDatabasesPerNamespace`
+  [`kvstore.maxStoresPerNamespace`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml) and `sql.maxDatabasesPerNamespace`
   change two of them. A create past a cap gets 400.
 - A refused group delete names at most five members, and counts the rest.
 
@@ -290,16 +290,16 @@ These errors stop a command before any server answers:
 | `no node interpreter found for the node handler` | `funcdctl dev` found no Node.js for the example's Function. Put Node.js on the `PATH`, or set `FUNCD_NODE` to the path of `node`. |
 | `<file>: <kind> "<name>" is in namespace "<namespace>"; funcdctl dev runs namespace default only` | Remove `metadata.namespace` from the object, set it to `default`, or apply the file to a funcd server. |
 | `manifest is invalid (<kind> "<name>")`, followed by `resourceGroup is required for kind "<kind>"` | `funcdctl apply` checks each document before it sends it. Set `metadata.resourceGroup` on every object of a namespace. |
-| `manifest is invalid (Namespace "<name>")`, followed by a value that `must be implicit or explicit` or `must be authenticated or open` | Set `defaultExposure` or `edgeDefaults.auth.mode` to a value that the [Spec](https://pyvvo.github.io/funcd/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec) tab lists. |
+| `manifest is invalid (Namespace "<name>")`, followed by a value that `must be implicit or explicit` or `must be authenticated or open` | Set `defaultExposure` or `edgeDefaults.auth.mode` to a value that the [Spec](https://funcd.dev/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec) tab lists. |
 | `manifest is invalid (Namespace "<name>")`, followed by `spec.volumeBudget and spec.volumeBudgetBytes are both set: want at most one` | Keep one of the two budgets. |
-| `manifest is invalid (Namespace "<name>")`, followed by `spec.volumeBudget` and the reason the size does not parse | Write `spec.volumeBudget` as a size that the [Spec](https://pyvvo.github.io/funcd/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec) tab describes. |
+| `manifest is invalid (Namespace "<name>")`, followed by `spec.volumeBudget` and the reason the size does not parse | Write `spec.volumeBudget` as a size that the [Spec](https://funcd.dev/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec) tab describes. |
 
 ## Run it locally
 
 - `funcdctl dev` runs the namespace `default` only, and stops on another.
 - Its token is a developer's, so a Namespace in its folder stops it; `default` keeps its defaults there.
 - It gives the group `dev` to each object that names none, without a ResourceGroup, so deleting `dev` gets 404.
-- Its state stays in memory unless [`--persist`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev) keeps it in `.funcd-dev`.
+- Its state stays in memory unless [`--persist`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev) keeps it in `.funcd-dev`.
 
 ## Examples
 

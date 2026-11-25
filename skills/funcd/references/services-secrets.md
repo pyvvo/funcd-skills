@@ -1,6 +1,6 @@
 # Secrets
 
-Source: https://pyvvo.github.io/funcd/docs/develop/services/secrets.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/services/secrets.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -21,9 +21,9 @@ Create a Secret, bind it in a Function, read its values, and control which Funct
 
 ## Usage
 
-[Secrets](https://pyvvo.github.io/funcd/docs/platform/services/secrets.md) store named values such as API keys. Declare and bind a Secret to a Function, then read its values through `ctx.secret`.
+[Secrets](https://funcd.dev/docs/platform/services/secrets.md) store named values such as API keys. Declare and bind a Secret to a Function, then read its values through `ctx.secret`.
 
-Install the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), Git, curl and Node.js.
+Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git, curl and Node.js.
 
 ### TypeScript
 
@@ -142,7 +142,7 @@ export const handle: Handler<FuncInput, FuncOutput> = async (ctx) => {
 };
 ```
 
-See [Spec](https://pyvvo.github.io/funcd/docs/develop/services/secrets/spec.md#handler-api) for method details.
+See [Spec](https://funcd.dev/docs/develop/services/secrets/spec.md#handler-api) for method details.
 
 ## Write a key of a Secret
 
@@ -186,7 +186,9 @@ metadata:
   namespace: default
   resourceGroup: rg1
 spec:
-  owner: token-owner
+  owner:
+    kind: Function
+    name: token-owner
   data:
     TOKEN: dG9rZW4tdjE=   # base64("token-v1")
 ```
@@ -275,7 +277,9 @@ metadata:
   namespace: default
   resourceGroup: rg1
 spec:
-  owner: py-token-owner
+  owner:
+    kind: Function
+    name: py-token-owner
   data:
     TOKEN: dG9rZW4tdjE=   # base64("token-v1")
 ```
@@ -483,7 +487,7 @@ def handle(context: FunctionContext, event: CloudEvent[FuncInput]) -> FuncOutput
 ## Access
 
 - A Function can read the Secrets it binds (`secret::read`). The declared keys check readiness; they do not restrict which keys the binding exposes.
-- A Function can write a bound Secret whose `spec.owner` names it (`secret::write`). Other writers need `Secret Data Writer`, scoped to the Secret or its namespace.
+- A Function or a Job can write a bound Secret whose `spec.owner` names it by kind and name (`secret::write`). Other writers need `Secret Data Writer`, scoped to the Secret or its namespace.
 - `Secret Data Reader` adds no access beyond a binding. These data roles apply to Functions. The general roles `Reader`, `Contributor` and `Owner` include no Secret actions.
 
 See the complete RolesAssignment in [Let another Function write](#let-another-function-write-a-secret).
@@ -503,7 +507,7 @@ forbid(principal, action == Action::"secret::write", resource)
   unless { resource has writers && resource.writers.contains(principal) };
 ```
 
-A namespace Policy can forbid a read or write even when ownership, a binding or a role allows it. A forbidden read affects the Function's readiness. A forbidden write does not. See [Security](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md#write-a-policy).
+A namespace Policy can forbid a read or write even when ownership, a binding or a role allows it. A forbidden read affects the Function's readiness. A forbidden write does not. See [Security](https://funcd.dev/docs/develop/security-and-networking/security.md#write-a-policy).
 
 This Policy forbids `env-echo` to read `app-secret`:
 
@@ -525,7 +529,7 @@ spec:
 
 A Function binds Secrets in its own namespace. For a Workflow step, ownership names the invoked Function: `<workflow>-<step>` for an inline step, or the existing Function for a referenced step.
 
-An [App](https://pyvvo.github.io/funcd/docs/develop/workloads/app/spec.md#appspecsecrets) or [Workflow](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecsecrets) declares Secrets on the parent resource. Its Functions bind them.
+An [App](https://funcd.dev/docs/develop/workloads/app/spec.md#appspecsecrets) or [Workflow](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecsecrets) declares Secrets on the parent resource. Its Functions bind them.
 
 People access Secrets through the control-plane API using their credential's role. An admin or a developer of the namespace can read and write them. A viewer cannot read them. Cedar does not decide these API requests.
 
@@ -537,7 +541,7 @@ A write's JSON body, including the value, can hold at most 1 MiB. A larger write
 
 Secrets live in funcd's metastore. They survive a restart with `storage.mode: file`, the default, and are lost with `storage.mode: memory`.
 
-Secrets are stored unencrypted by default. Set `secrets.encryptionKeyFile` to a file containing exactly 32 bytes to encrypt them with AES-256. funcd refuses to start if the stored Secrets do not match the configured encryption mode or key. See [server configuration](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml).
+Secrets are stored unencrypted by default. Set `secrets.encryptionKeyFile` to a file containing exactly 32 bytes to encrypt them with AES-256. funcd refuses to start if the stored Secrets do not match the configured encryption mode or key. See [server configuration](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml).
 
 ## Status
 
@@ -557,7 +561,7 @@ For a local platform, add the `--server` and `--token` flags printed by `funcdct
 | `Degraded` | `DependencyNotReady` | A Policy forbids a read, and the Function has served. The message names the binding, such as `secret binding "app-secret": …`. |
 | `Deploying` | `DependencyNotReady` | A Policy forbids a read, and the Function has not served yet. |
 | `RevisionReady` condition | `SecretNotFound`, `SecretKeyMissing` or `SecretResolveFailed` | While a worker serves, the phase stays `Ready`, and the reason is on this condition once funcd has checked the Secrets again. |
-| Any other reason | | See the [Function's Status](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#status). |
+| Any other reason | | See the [Function's Status](https://funcd.dev/docs/develop/workloads/function.md#status). |
 
 funcd checks a Pending Function again every `controller.referentPollInterval`, 2 seconds by default. A Function with dedicated workers may show the updated Secret condition only after another change, such as a Function update or a worker stopping.
 
@@ -570,7 +574,7 @@ For binary data, base64-encode the data, then encode that text again for `spec.d
 - Removing a declared key prevents new workers from starting until the key is restored. Existing workers keep serving and the Function stays Ready.
 - Deleting a bound Secret prevents reads from all of the Function's bound Secrets: `get` returns no value and `list` fails. New workers wait until the Secret and its declared keys exist again. Existing workers keep serving and the Function stays `Ready`.
 - A namespace Policy that forbids reading a bound Secret makes the Function's workers unready within `runtime.supervisionPeriod`, 10 seconds by default. Removing the Policy restores readiness without changing the Function.
-- Changing a Lake's bound Secret replaces its engine. See [Lake](https://pyvvo.github.io/funcd/docs/develop/services/lake.md#changes-and-deletion).
+- Changing a Lake's bound Secret replaces its engine. See [Lake](https://funcd.dev/docs/develop/services/lake.md#changes-and-deletion).
 - A Function that owns Secrets shares workers only with Functions that own the same Secrets. Changing ownership can move it to other workers.
 - Deleting a Function, Workflow or App does not delete its Secrets.
 
@@ -589,7 +593,7 @@ For binary data, base64-encode the data, then encode that text again for `spec.d
 
 Each startup or file reload reapplies the folder's Secret manifests and replaces values written by Functions. Ownership and writer roles are enforced locally too.
 
-For a declared Secret without a manifest, funcdctl reads each declared key from the shell, then `dev.envFile`, then `dev.env` in `funcdctl.config.yaml`. A missing key stops startup. See [funcdctl dev](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev).
+For a declared Secret without a manifest, funcdctl reads each declared key from the shell, then `dev.envFile`, then `dev.env` in `funcdctl.config.yaml`. A missing key stops startup. See [funcdctl dev](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev).
 
 From the funcd-typescript repository root, run the example with values from the shell:
 

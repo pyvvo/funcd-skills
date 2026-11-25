@@ -1,6 +1,6 @@
 # funcdctl
 
-Source: https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/tools/funcdctl.md (the Markdown copy of the page; prefer it when the network is up).
 
 
 The funcd CLI, which applies resources, reads their state and logs, and runs Functions on the local machine.
@@ -17,8 +17,8 @@ funcdctl --server http://localhost:8080 --token funcd-dev-token get functions -n
 
 `funcd-dev-token` is the built-in token of a server that sets neither `auth.token` nor `auth.credentials`. Such a
 server accepts it only on loopback, in the namespace `default`; the [server's
-keys](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml) set other credentials.
+keys](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml) set other credentials.
 
-funcdctl comes in two builds. The dev build, which the [install script](https://pyvvo.github.io/funcd/docs/get-started/install.md) installs, adds
+funcdctl comes in two builds. The dev build, which the [install script](https://funcd.dev/docs/get-started/install.md) installs, adds
 `funcdctl dev`, which runs Functions on the local machine with no server; the smaller build, for a server, does not.
-The [Spec](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md) tab lists every command with its flags, and marks the ones that only the dev build has.
+The [Spec](https://funcd.dev/docs/develop/tools/funcdctl/spec.md) tab lists every command with its flags, and marks the ones that only the dev build has.

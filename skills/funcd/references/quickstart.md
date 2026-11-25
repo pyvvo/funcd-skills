@@ -1,6 +1,6 @@
 # Quickstart
 
-Source: https://pyvvo.github.io/funcd/docs/get-started/quickstart.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/get-started/quickstart.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -15,7 +15,7 @@ Run a first Function on the local machine with funcdctl dev, call it, and read i
 This page runs the hello-world example of [funcd-typescript](https://github.com/pyvvo/funcd-typescript) on the local
 machine. It needs no funcd server. It needs only two things:
 
-- `funcdctl` in its dev build (see [Install](https://pyvvo.github.io/funcd/docs/get-started/install.md));
+- `funcdctl` in its dev build (see [Install](https://funcd.dev/docs/get-started/install.md));
 - Node.js on the `PATH`, because funcd starts the Function with `node`.
 
 ## 1. Get the example

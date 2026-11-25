@@ -1,6 +1,6 @@
 # Networking
 
-Source: https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/security-and-networking/networking.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -22,12 +22,12 @@ Serve a Function at a path and a host of its own with a Route, ask its callers t
 
 ## Usage
 
-A **Route** tells funcd's [edge](https://pyvvo.github.io/funcd/docs/platform/security-and-networking/networking.md), which receives the calls
+A **Route** tells funcd's [edge](https://funcd.dev/docs/platform/security-and-networking/networking.md), which receives the calls
 from outside funcd, where to answer: each rule sends the requests on a path to a Function, a Bucket's files or a Site.
 An **EgressPolicy** lists where a Function's workers may connect, on a server that controls outbound connections.
 
 The TypeScript example http-api serves the Function `devices-api` at `/api`. Install the
-[dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`.
+[dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`.
 
 ### TypeScript
 
@@ -46,7 +46,7 @@ Route's phase is `Ready`, with the reason `Programmed`:
 $ funcdctl --server http://127.0.0.1:8081 --token funcd-dev-token get route api -n default -o json
 ```
 
-The Route, in `route.yaml`; [Serve HTTP requests](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#serve-http-requests) explains the
+The Route, in `route.yaml`; [Serve HTTP requests](https://funcd.dev/docs/develop/workloads/function.md#serve-http-requests) explains the
 Function:
 
 ```yaml
@@ -64,8 +64,8 @@ spec:
         function: devices-api
 ```
 
-A rule without a [`pathType`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#routespecrules) is a `Prefix`: `/api` matches `/api/devices` but not `/apix`.
-[`backend.function`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#routespecrulesbackend) names a Function of the Route's namespace. The edge removes the
+A rule without a [`pathType`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#routespecrules) is a `Prefix`: `/api` matches `/api/devices` but not `/apix`.
+[`backend.function`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#routespecrulesbackend) names a Function of the Route's namespace. The edge removes the
 rule's path, so the app gets `/devices`, with `/api` in `X-Forwarded-Prefix`; the Function's own address,
 `/function/devices-api`, keeps answering. Create a device and list them:
 
@@ -80,7 +80,7 @@ Press Ctrl-C in the first terminal to stop.
 
 ## Choose the host of a Route
 
-A Route answers on the host that its [`host`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#routespec) sets, compared in lower case without a port or a
+A Route answers on the host that its [`host`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#routespec) sets, compared in lower case without a port or a
 trailing dot. Without a host, it answers on its namespace's host, `<namespace>.<server.baseDomain>`, such as
 `shop.localhost`; a Route of `default`, which has no host, answers on every host except another namespace's while that
 namespace has a Route there.
@@ -90,7 +90,7 @@ A Route is not served, and not Ready:
 - on another namespace's host, or a name under it, while that namespace has a Route there, or with a rule under
   `/function` on such a host (`HostReserved`);
 - in `default` without a host, with a rule under `/function` (`ReservedPath`), or when the Namespace `default` sets
-  [`defaultExposure: explicit`](https://pyvvo.github.io/funcd/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec) (`HostRequired`).
+  [`defaultExposure: explicit`](https://funcd.dev/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespec) (`HostRequired`).
 
 This Route serves `devices-api` at the root of `devices.example.com`
 ([complete file](https://github.com/pyvvo/funcd/blob/main/api/types/v1alpha1/examples/networking/route.yaml)); locally,
@@ -111,14 +111,14 @@ spec:
         function: devices-api
 ```
 
-`status.host` names the host that a Route claims. A [Function's](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecingress) or a
-[Site's](https://pyvvo.github.io/funcd/docs/develop/workloads/site/spec.md#sitespecingress) `spec.ingress` host or path makes a Route that it owns, by the
+`status.host` names the host that a Route claims. A [Function's](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecingress) or a
+[Site's](https://funcd.dev/docs/develop/workloads/site/spec.md#sitespecingress) `spec.ingress` host or path makes a Route that it owns, by the
 same rules.
 
 ## Choose which rule serves a request
 
 - A `Prefix` rule matches its path and every path under it by whole segments, `/` matching all; an `Exact` rule only
-  its path, and its backend gets `/`. A rule with [`methods`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#routespecrules) matches only those.
+  its path, and its backend gets `/`. A rule with [`methods`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#routespecrules) matches only those.
 - Among the matching rules, the longest path wins, whatever Route holds it; at equal length, a Route with a host wins.
 - On a namespace's host, a path under `/function` goes to that namespace's Function, unless a rule of that namespace
   under `/function` matches.
@@ -132,18 +132,20 @@ winner is deleted. A hostless Route of `default` conflicts only with other hostl
 
 ## Ask callers to authenticate
 
-A Route's [`auth`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#routespecauth) mode applies to its rules, and a rule's own [`auth`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#routespecrules)
+A Route's [`auth`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#routespecauth) mode applies to its rules, and a rule's own [`auth`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#routespecrules)
 wins; without either, the Namespace's
-[`edgeDefaults.auth`](https://pyvvo.github.io/funcd/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespecedgedefaultsauth) applies, else `open`.
+[`edgeDefaults.auth`](https://funcd.dev/docs/develop/tenancy-and-limits/namespaces/spec.md#namespacespecedgedefaultsauth) applies, else `open`.
 An `authenticated` rule:
 
 - answers 401 `authentication required but no authenticator is configured` while
-  [`server.auth.edge`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml) is `false`, its default, and under `funcdctl dev`;
+  [`server.auth.edge`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml) is `false`, its default, and under `funcdctl dev`;
 - otherwise needs a server credential's token in `Authorization: Bearer` or `X-Api-Key`, whose role may get the
   namespace's Functions: else 401, or 403. The Function gets the call without those headers.
 
+The `oidc` mode signs callers in with an OpenID Connect provider instead: [OIDC sign-in](https://funcd.dev/docs/develop/security-and-networking/sign-in.md).
+
 A Route's mode covers only its rules: a Function's own address takes its
-[`spec.ingress.auth`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecingressauth), else the Namespace's default, else
+[`spec.ingress.auth`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecingressauth), else the Namespace's default, else
 `open`, and answers only while its address is on.
 
 ### TypeScript
@@ -196,21 +198,26 @@ Press Ctrl-C in the first terminal to stop.
 ## Allow a Function's outbound connections
 
 Egress control works on Linux with the containerd runtime. Turn it on with these
-[server settings](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), as the egress-probe example's
+[server settings](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), as the egress-probe example's
 [`funcdconfig.yaml`](https://github.com/pyvvo/funcd-typescript/blob/main/examples/egress-probe/funcdconfig.yaml) does:
 `server.network.egress: true`, `server.network.egressGatewayPort`, `server.network.dnsForwarderPort` and
-`server.network.dnsResolver`. With it on, a Function reaches nothing outside funcd unless an EgressPolicy or a Policy
-allows it. Without it, and under `funcdctl dev`, workers connect anywhere.
+`server.network.dnsResolver`. With it on, a Function or an add-on engine reaches nothing outside funcd unless an
+EgressPolicy or a Policy allows it. Without it on containerd, a Function's workers connect anywhere and an add-on
+engine nowhere. Under `funcdctl dev`, workers and engines both connect anywhere.
 
-An EgressPolicy's [`rules`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#egresspolicyspec) allow TCP connections to their [`to`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#egresspolicyspecrules)
+An EgressPolicy's [`rules`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#egresspolicyspec) allow TCP connections to their [`to`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#egresspolicyspecrules)
 on their `ports`, or on every port:
 
-- [`domains`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#egresspolicyspecrulesto): exact names, or wildcards such as `*.example.com`, which do not match
+- [`domains`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#egresspolicyspecrulesto): exact names, or wildcards such as `*.example.com`, which do not match
   `example.com` itself;
-- [`cidrs`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#egresspolicyspecrulesto): address ranges, such as `10.0.0.0/8`.
+- [`cidrs`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#egresspolicyspecrulesto): address ranges, such as `10.0.0.0/8`.
 
-[`appliesTo`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#egresspolicyspec) names the Functions, else all of the namespace's; the rules of all its
-EgressPolicies add up. A worker can look up only the names that a domain rule allows, and a domain rule allows only the
+[`appliesTo`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#egresspolicyspec) names the Functions, Jobs and add-on objects it applies to, each by its kind and
+name, such as `{kind: Job, name: tofu}`, or `{kind: Tunnel, name: public}` for the engine of an add-on object, its kind
+spelled as its Addon spells it. funcd refuses with 400 a kind that no Addon registers for objects that run an engine,
+such as a settings kind. Without `appliesTo`, the rules apply to all of the namespace's Functions and to no Job or
+engine. The rules of
+all its EgressPolicies add up. A worker can look up only the names that a domain rule allows, and a domain rule allows only the
 addresses that the lookup returned, never a private one. So a CIDR host reached by name also needs a domain rule, and a
 private address needs a CIDR rule.
 
@@ -267,11 +274,18 @@ spec:
 
 ## Access
 
-- **Outbound connections.** A Function gets none by itself. Each connection needs a `permit` of `egress::connect`:
-  funcd makes one from each EgressPolicy rule, and a [Policy](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md#policy) can hold one, but a lookup
+- **Outbound connections.** A Function or an add-on engine gets none by itself. Each connection needs a `permit` of
+  `egress::connect`:
+  funcd makes one from each EgressPolicy rule, and a [Policy](https://funcd.dev/docs/develop/security-and-networking/security/spec.md#policy) can hold one, but a lookup
   still needs a domain rule. A Policy's `forbid` stops a connection, not the lookup.
+- **A workload's calls to the edge.** With egress control on, a worker or an add-on engine reaches funcd's edge
+  directly at funcd's bridge address, `10.63.0.1` by default, on the data plane's port; a configured address needs a
+  fixed port in `server.dataPlaneAddr`. There it gets only its own namespace's hosts, Functions by name and sign-in
+  callback: another namespace's, or an `X-Funcd-Namespace` header that names one, gets 403
+  `outside the caller's namespace`. Any other way to it, such as a node address at that port, is refused whatever an
+  EgressPolicy allows.
 - **Callers of an authenticated rule.** With `server.auth.edge: true`, the token's credential decides, from
-  [`auth.credentials`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml): `viewer` is the smallest role that passes in its
+  [`auth.credentials`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml): `viewer` is the smallest role that passes in its
   namespaces, and another namespace gets 403, such as
   `not authorized to invoke default/env-echo: viewer not scoped to namespace "default"`.
 
@@ -279,8 +293,8 @@ spec:
 
 - An EgressPolicy holds 1 to 64 rules, each with at most 64 domains and CIDRs and 32 ports.
 - A call through the edge carries at most 1 MiB, or gets 413.
-- [`server.limits`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml) sets the edge's rate, in-flight and body limits, off
-  by default; see also the [Function's limits](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#limits-and-quotas).
+- [`server.limits`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml) sets the edge's rate, in-flight and body limits, off
+  by default; see also the [Function's limits](https://funcd.dev/docs/develop/workloads/function.md#limits-and-quotas).
 
 ## Status
 
@@ -293,7 +307,7 @@ spec:
 | `Pending` | `BucketNotFound` | The Bucket that a rule names does not exist in the Route's namespace. funcd checks again every `controller.referentPollInterval`. |
 | `Pending` | `SiteNotFound` | The Site that a rule names does not exist in the Route's namespace. funcd checks again every `controller.referentPollInterval`. |
 | `Pending` | `SiteNotReady` | The Site that a rule names serves nothing yet. funcd checks again every `controller.referentPollInterval`. |
-| `Pending` | `Disabled` | The Route's [`enabled`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#routespec) is `false`, or the Route is one that a Function or a Site owns in a namespace whose `defaultExposure` is `explicit`, and its `enabled` is not set. It leaves its paths to the other Routes. |
+| `Pending` | `Disabled` | The Route's [`enabled`](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#routespec) is `false`, or the Route is one that a Function or a Site owns in a namespace whose `defaultExposure` is `explicit`, and its `enabled` is not set. It leaves its paths to the other Routes. |
 | `Pending` | `HostReserved`, `ReservedPath` or `HostRequired` | The Route's host or a rule's path breaks a rule of [Choose the host of a Route](#choose-the-host-of-a-route). |
 | `Pending` | `RouteConflict` | Another Route keeps one of the Route's paths, as [Choose which rule serves a request](#choose-which-rule-serves-a-request) explains. |
 | `Pending` | Another reason | Read the condition's reason and message in the same output. |
@@ -315,7 +329,7 @@ These errors stop a command before any server answers:
 | Error | Action |
 | --- | --- |
 | `no node interpreter found for the node handler` | `funcdctl dev` found no Node.js for the examples' Functions. Put Node.js on the `PATH`, or set `FUNCD_NODE` to the path of `node`. |
-| `manifest is invalid (<kind> "<name>")`, followed by the field and the rule it breaks, such as `spec.rules[0].path "api" must begin with '/'` | `funcdctl apply` checks each Route and EgressPolicy before it sends it. Correct the field that the message names, as the [Spec](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md) tab describes it. |
+| `manifest is invalid (<kind> "<name>")`, followed by the field and the rule it breaks, such as `spec.rules[0].path "api" must begin with '/'` | `funcdctl apply` checks each Route and EgressPolicy before it sends it. Correct the field that the message names, as the [Spec](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md) tab describes it. |
 | `manifest is invalid`, followed by `spec.rules[0].backend must set exactly one of function, static or site` | Give the rule one backend. |
 | `manifest is invalid`, followed by `spec.rules[0].to must set at least one of domains/cidrs` | List a domain or a CIDR in the rule's `to`. |
 | `manifest is invalid`, followed by `spec.rules[0].to.domains "*" is not a valid domain or "*."-wildcard` | Write an exact host name, or a wildcard that starts with `*.`. |
@@ -328,7 +342,7 @@ These errors stop a command before any server answers:
 - Its edge has no authenticator, so `authenticated` rules answer 401.
 - It controls no outbound connection: an EgressPolicy is applied but changes nothing, and the banner warns
   `⚠ egress is NOT isolated in dev`.
-- Its state stays in memory unless [`--persist`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev) keeps it in `.funcd-dev`.
+- Its state stays in memory unless [`--persist`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev) keeps it in `.funcd-dev`.
 
 ## Examples
 

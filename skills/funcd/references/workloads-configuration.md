@@ -1,6 +1,6 @@
 # Configuration
 
-Source: https://pyvvo.github.io/funcd/docs/develop/workloads/configuration.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/workloads/configuration.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -21,14 +21,14 @@ Give a Function settings that are not secret through a ConfigMap, and read them 
 
 ## Usage
 
-A [ConfigMap](https://pyvvo.github.io/funcd/docs/platform/workloads/configuration.md) holds settings that are not secret as string keys. Each
-[worker](https://pyvvo.github.io/funcd/docs/platform/workloads.md#runtime) of a Function that binds it gets its keys as environment
+A [ConfigMap](https://funcd.dev/docs/platform/workloads/configuration.md) holds settings that are not secret as string keys. Each
+[worker](https://funcd.dev/docs/platform/workloads.md#runtime) of a Function that binds it gets its keys as environment
 variables when it starts. A Function declares a ConfigMap under
-[`spec.configMaps`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecconfigmaps) and binds it under
-[`spec.bindings.config`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecbindings); a binding names only a ConfigMap that its Function,
+[`spec.configMaps`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecconfigmaps) and binds it under
+[`spec.bindings.config`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecbindings); a binding names only a ConfigMap that its Function,
 or its App, declares.
 
-Install the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`. The
+Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`. The
 env-echo example returns one ConfigMap setting and two Secret values.
 
 ### TypeScript
@@ -102,7 +102,7 @@ $ curl -s -X POST http://127.0.0.1:8080/function/env-echo
 ```
 
 The handler reads `APP_MODE` from its environment, and the Secret through
-[`ctx.secret`](https://pyvvo.github.io/funcd/docs/develop/services/secrets.md):
+[`ctx.secret`](https://funcd.dev/docs/develop/services/secrets.md):
 
 ```ts
 // env-echo: a handler that takes no input and returns three values: APP_MODE from its environment, where funcd puts
@@ -142,11 +142,11 @@ key of its bound ConfigMaps, except:
 - a key that starts with `FUNCD_`, which funcd reserves, with a warning in its log;
 - a key that a bound Secret also holds, which the handler reads through `ctx.secret`;
 - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` of a Function that binds a Bucket while the
-  [S3 gateway](https://pyvvo.github.io/funcd/docs/develop/services/bucket.md) runs, which funcd sets itself.
+  [S3 gateway](https://funcd.dev/docs/develop/services/bucket.md) runs, which funcd sets itself.
 
 ## Read a setting through ctx.config
 
-[`ctx.config.get(key)`](https://pyvvo.github.io/funcd/docs/develop/workloads/configuration/spec.md#handler-api) returns a key that a bound ConfigMap delivers, and `undefined` or `None`
+[`ctx.config.get(key)`](https://funcd.dev/docs/develop/workloads/configuration/spec.md#handler-api) returns a key that a bound ConfigMap delivers, and `undefined` or `None`
 for any other key, such as `PATH`; `ctx.config.list()` returns those keys, sorted. Both read the worker's environment,
 so in TypeScript `get` returns the value itself, not a Promise.
 
@@ -234,12 +234,12 @@ flags of its banner.
 | `Failed` | `ConfigResolveFailed` | No worker runs, and funcd starts none: a bound ConfigMap is missing, or holds a value that is not UTF-8 text or that holds a NUL byte. The message of the `Ready` condition names the ConfigMap, and the key for a bad value. Calls fail with the HTTP status 503. When the ConfigMap is missing, create it: funcd checks for it every `controller.referentPollInterval`, 2 seconds by default, and starts the workers once it exists. |
 | `RevisionReady` condition | `ConfigResolveFailed` | The latest revision cannot start for one of the reasons of the `Failed` row, while a worker of the serving revision keeps the calls: the phase stays `Ready`. Fix or create the ConfigMap: funcd checks again every `runtime.supervisionPeriod`, 10 seconds by default. Once no worker is left, the Function is `Failed`. |
 | `Pending` | `StoreNotOwned` | A ConfigMap that the Function defines exists under its stored name and does not belong to the Function, as [Define the settings in the Function](#define-the-settings-in-the-function) describes. Declare the shared settings by `ref`. |
-| Another phase or reason | | The [Function's Status](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#status) explains it. |
+| Another phase or reason | | The [Function's Status](https://funcd.dev/docs/develop/workloads/function.md#status) explains it. |
 
 ## Changes and deletion
 
 - A worker keeps the settings that it started with, so a changed ConfigMap reaches only workers that start later,
-  such as those of a [new revision](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#changes-and-deletion).
+  such as those of a [new revision](https://funcd.dev/docs/develop/workloads/function.md#changes-and-deletion).
 - Changing a defined ConfigMap changes the Function's spec: funcd creates it under a new hash and starts a new
   revision, then deletes the old ConfigMap unless another resource names it.
 - Deleting a bound ConfigMap changes nothing at once. funcd notices when the Function next needs a worker, and then

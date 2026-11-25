@@ -1,6 +1,6 @@
 # KV
 
-Source: https://pyvvo.github.io/funcd/docs/develop/services/kv.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/services/kv.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -24,20 +24,20 @@ Declare a key-value store, bind its tables to a Function, and read and write key
 
 A KV store keeps keys and their values in tables, each a separate set of keys inside the store. A Function's handler
 reads and writes the keys through `ctx.kv`, the KV client of the context that every handler receives. See
-[how KV works](https://pyvvo.github.io/funcd/docs/platform/services/kv.md) for the concept.
+[how KV works](https://funcd.dev/docs/platform/services/kv.md) for the concept.
 
 The kv-counter example counts calls by name: each call sends a name, and the Function adds one to the count stored
 under that name and returns the new count.
 
-Install the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), Git and curl, and put the runtime of the
+Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git and curl, and put the runtime of the
 example's language on the `PATH`: Node.js for TypeScript, or Python 3.12 or later as `python3`.
 
-The example's Function declares a store under [`spec.kv`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspeckv), with one
+The example's Function declares a store under [`spec.kv`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspeckv), with one
 table. The table sets no `owner`, so the Function that declares the store owns the table and can write it;
 [Access](#access) explains who else can. A **binding** under
-[`spec.bindings.kv`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecbindingskv) connects the table to the Function under
-an alias, which the handler passes to `ctx.kv`. The [Spec](https://pyvvo.github.io/funcd/docs/develop/services/kv/spec.md) tab lists every field of a store and every method
-of [`ctx.kv`](https://pyvvo.github.io/funcd/docs/develop/services/kv/spec.md#ctxkv).
+[`spec.bindings.kv`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecbindingskv) connects the table to the Function under
+an alias, which the handler passes to `ctx.kv`. The [Spec](https://funcd.dev/docs/develop/services/kv/spec.md) tab lists every field of a store and every method
+of [`ctx.kv`](https://funcd.dev/docs/develop/services/kv/spec.md#ctxkv).
 
 `funcdctl dev` starts a local platform, runs the resource files of one folder on it, and prints the URL of each
 Function, on the port that `--gport` sets. It runs the Function from the code in the folder, not from the manifest's
@@ -267,7 +267,8 @@ if new is not None:
 
 ## Share a store between Functions
 
-Create the store as a separate KVStore, and set the `owner` of each table to the Function that writes the table:
+Create the store as a separate KVStore, and set the `owner` of each table to the Function or Job that writes the table, by
+its kind and name:
 
 ```yaml
 apiVersion: funcd.io/v1alpha1
@@ -281,7 +282,9 @@ spec:
     maxSize: 64Mi
   tables:
     - name: table-counters
-      owner: counter
+      owner:
+        kind: Function
+        name: counter
 ```
 
 Each Function that uses the store declares it by `ref` under `spec.kv` and binds the table, as this excerpt of the
@@ -304,7 +307,7 @@ Every Function that binds the table can read it. A Function other than the owner
 
 ## Access
 
-A Function needs no role for these [actions](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md#choose-a-role):
+A Function needs no role for these [actions](https://funcd.dev/docs/develop/security-and-networking/security.md#choose-a-role):
 
 - **Read the tables that it binds** (`kv::read`). Each entry of `spec.bindings.kv` lets the Function read that table,
   never write it.
@@ -337,11 +340,11 @@ spec:
 
 The built-in roles `Contributor` and `Owner` also allow writing keys, together with reading and writing buckets, and a
 Role that an operator defines can allow it too. The Security reference
-[lists the built-in roles](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md#rolesassignmentspecassignmentsroleref) and
-[explains how assignments pair each role with a scope](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md#rolesassignmentspecassignments).
+[lists the built-in roles](https://funcd.dev/docs/develop/security-and-networking/security/spec.md#rolesassignmentspecassignmentsroleref) and
+[explains how assignments pair each role with a scope](https://funcd.dev/docs/develop/security-and-networking/security/spec.md#rolesassignmentspecassignments).
 
 funcd applies these rules as a built-in policy in every namespace, so nothing needs to be written or installed. A
-[Policy](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md#write-a-policy) that an operator writes applies beside it,
+[Policy](https://funcd.dev/docs/develop/security-and-networking/security.md#write-a-policy) that an operator writes applies beside it,
 and cannot allow a write that the built-in policy forbids. In Cedar, the built-in policy reads:
 
 ```cedar title="Built-in KV policy"
@@ -365,7 +368,7 @@ Function a writer role, as above.
 
 ## Limits and quotas
 
-A store's [`spec.quota`](https://pyvvo.github.io/funcd/docs/develop/services/kv/spec.md#kvstorespecquota) sets its limits:
+A store's [`spec.quota`](https://funcd.dev/docs/develop/services/kv/spec.md#kvstorespecquota) sets its limits:
 
 - `maxSize` or `maxBytes` limits the total size of the store. Set one of the two, not both. Without either, the store
   has no size limit.
@@ -373,12 +376,12 @@ A store's [`spec.quota`](https://pyvvo.github.io/funcd/docs/develop/services/kv/
 - `maxKeyBytes` limits the size of each key. When it is not set, the limit is 1 KiB.
 
 A write fails when its key or its value is above its limit, or when it would take the store above its total size. The
-[Spec](https://pyvvo.github.io/funcd/docs/develop/services/kv/spec.md) tab gives the range of each field.
+[Spec](https://funcd.dev/docs/develop/services/kv/spec.md) tab gives the range of each field.
 
 ## Data storage
 
 By default, funcd keeps KV data in memory, and the data is lost when funcd stops. To keep the data on disk, set
-`kvstore.engine: badger` in [funcd's configuration](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml). funcd then stores
+`kvstore.engine: badger` in [funcd's configuration](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml). funcd then stores
 the data in the `kv` folder of its data directory, unless `kvstore.dataDir` names another folder.
 `storage.mode: memory` keeps KV data in memory even when `kvstore.engine` is `badger`.
 
@@ -395,7 +398,7 @@ the data in the `kv` folder of its data directory, unless `kvstore.dataDir` name
 | KVStore `Degraded` | `StorageUnreachable` | funcd's KV engine did not answer its last check, which funcd repeats every `health.storageProbeInterval`, 10 seconds by default. The message of the `Ready` condition gives the error. The store becomes `Ready` again by itself once a check passes. |
 | Function `Pending` | `KVStoreNotFound` | A store or a table that the Function binds does not exist. The Function starts once it exists. |
 | Function `Pending` | `StoreNotOwned` | A store that the Function declares by `name` exists and is not the Function's, as [Changes and deletion](#changes-and-deletion) describes. |
-| Any other reason | | See the [Function's Status](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#status). |
+| Any other reason | | See the [Function's Status](https://funcd.dev/docs/develop/workloads/function.md#status). |
 
 ## Changes and deletion
 
@@ -404,7 +407,7 @@ the data in the `kv` folder of its data directory, unless `kvstore.dataDir` name
 - Removing a table from a store deletes the table's keys. funcd refuses to remove a table from a KVStore while a
   binding names the table, so remove those bindings first.
 - When a Function that declares a store by `name` is deleted, the
-  [`deletion`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspeckv) setting of its entry decides: `retain`, the default,
+  [`deletion`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspeckv) setting of its entry decides: `retain`, the default,
   keeps the store and its keys, and `delete` deletes them.
 - To use a store that stayed, declare it by `ref` in the new Function. A new Function of the same name that declares
   the store by `name` waits in `Pending` with the reason `StoreNotOwned`, since the store still belongs to the deleted

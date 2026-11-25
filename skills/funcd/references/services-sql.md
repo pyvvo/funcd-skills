@@ -1,6 +1,6 @@
 # SQL
 
-Source: https://pyvvo.github.io/funcd/docs/develop/services/sql.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/services/sql.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -20,18 +20,18 @@ Declare a SQL database, bind it to a Function, and run SQL statements on it from
 
 ## Usage
 
-A [SQLDatabase](https://pyvvo.github.io/funcd/docs/platform/services/sql.md) has an engine of its own, rqlite, which keeps the data in SQLite,
+A [SQLDatabase](https://funcd.dev/docs/platform/services/sql.md) has an engine of its own, rqlite, which keeps the data in SQLite,
 so statements use SQLite's dialect. A Function binds the database and sends statements through
-[`ctx.sql`](https://pyvvo.github.io/funcd/docs/develop/services/sql/spec.md#handler-api).
+[`ctx.sql`](https://funcd.dev/docs/develop/services/sql/spec.md#handler-api).
 
 The first example, sql-notes in TypeScript or sql-orders in Python, creates the tables with a migration Function, then
-adds and lists rows through the database's **owner**, the Function that can write it. The migration Function writes
+adds and lists rows through the database's **owner**, the Function that can write it, named by its kind and name. The migration Function writes
 through the role `SQL Data Writer`, given in `grant.yaml`. Each Function declares the database under
-[`spec.sql`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecsql) and binds it under
-[`spec.bindings.sql`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecbindingssql), which allows reading; the handler
+[`spec.sql`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecsql) and binds it under
+[`spec.bindings.sql`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecbindingssql), which allows reading; the handler
 passes the binding's alias to `ctx.sql`.
 
-Install Git, curl and the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), which includes the SQL engine, and
+Install Git, curl and the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), which includes the SQL engine, and
 put Node.js, or [uv](https://docs.astral.sh/uv/) for Python, on the `PATH`. `funcdctl dev` starts an engine per
 database and logs `dev sql engine ready` once it answers; a call sent before waits, and fails after
 `invoke.activationTimeout`, 30 seconds by default. The data is deleted when `funcdctl dev` stops, unless
@@ -78,7 +78,9 @@ metadata:
   namespace: default
   resourceGroup: rg1
 spec:
-  owner: notes
+  owner:
+    kind: Function
+    name: notes
 ```
 
 The Function `notes`, in `notes.yaml`; `notes-migrate.yaml` declares and binds the database the same way:
@@ -205,7 +207,9 @@ metadata:
   namespace: default
   resourceGroup: rg1
 spec:
-  owner: orders
+  owner:
+    kind: Function
+    name: orders
 ```
 
 The Function `orders`, in `orders.yaml`; `orders-migrate.yaml` and `audit.yaml` declare and bind the database the same
@@ -299,7 +303,7 @@ return {"orders": [OrderOut(**{k: r[k] for k in keys}) for r in found]}  # type:
 ```
 
 `audit`, which also holds the writer role, records each change of `orders`: `changes.yaml` turns the database's change
-feed into [events](https://pyvvo.github.io/funcd/docs/develop/services/events.md#react-to-a-row-change-in-a-sql-database) that call it.
+feed into [events](https://funcd.dev/docs/develop/services/events.md#react-to-a-row-change-in-a-sql-database) that call it.
 
 ## Call ctx.sql without a query builder
 
@@ -465,10 +469,10 @@ export async function handle(ctx: FunctionContext, event: CloudEvent<FuncInput>)
 ## Access
 
 - A Function reads the databases that it binds (`sql::read`) and writes those that it owns (`sql::write`) with no
-  [role](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md#choose-a-role). funcd checks reading for `query` and
+  [role](https://funcd.dev/docs/develop/security-and-networking/security.md#choose-a-role). funcd checks reading for `query` and
   `queryValues`, and reading and writing for every `execute`, since `RETURNING` reads too.
 - Any other write needs
-  [`SQL Data Writer`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md#rolesassignmentspecassignmentsroleref), scoped to
+  [`SQL Data Writer`](https://funcd.dev/docs/develop/security-and-networking/security/spec.md#rolesassignmentspecassignmentsroleref), scoped to
   one `SQLDatabase` or the `Namespace`. `SQL Data Reader` adds nothing to a binding, and `Reader`, `Contributor` and
   `Owner` do not cover databases.
 - A binding names only a database that its Function declares, and `ctx.sql` takes only a binding's alias, so no role
@@ -497,7 +501,7 @@ spec:
 ```
 
 funcd applies these rules as a built-in policy in every namespace; an operator's
-[Policy](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md#write-a-policy) cannot allow a write that it forbids:
+[Policy](https://funcd.dev/docs/develop/security-and-networking/security.md#write-a-policy) cannot allow a write that it forbids:
 
 ```cedar title="Built-in SQL policy"
 @id("sql-read-binding")
@@ -516,10 +520,10 @@ A denied call fails with 403 and names the rule, such as `cedar: forbidden by po
 
 ## Limits and quotas
 
-- [`spec.quota`](https://pyvvo.github.io/funcd/docs/develop/services/sql/spec.md#sqldatabasespecquota) caps the database's size with `maxSize` or `maxBytes`. funcd measures
+- [`spec.quota`](https://funcd.dev/docs/develop/services/sql/spec.md#sqldatabasespecquota) caps the database's size with `maxSize` or `maxBytes`. funcd measures
   after each `execute`, so a call can pass the cap; past it, only calls whose statements are each a single `DELETE` or
   `DROP` run.
-- [`spec.resources`](https://pyvvo.github.io/funcd/docs/develop/services/sql/spec.md#sqldatabasespecresources) sets the engine's memory, 256 MiB by default, and CPU, on the
+- [`spec.resources`](https://funcd.dev/docs/develop/services/sql/spec.md#sqldatabasespecresources) sets the engine's memory, 256 MiB by default, and CPU, on the
   containerd runtime only:
 
 ```yaml
@@ -530,7 +534,9 @@ metadata:
   namespace: default
   resourceGroup: rg1
 spec:
-  owner: notes
+  owner:
+    kind: Function
+    name: notes
   quota:
     maxSize: 1Gi
   resources:
@@ -538,7 +544,7 @@ spec:
 ```
 
 - One `ctx.sql` call sends at most 500 statements and 1 MiB, gets back at most 8 MiB, and runs at most
-  [`sql.callTimeout`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), 30 seconds by default.
+  [`sql.callTimeout`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 30 seconds by default.
 - A namespace holds at most `sql.maxDatabasesPerNamespace` databases, 20 by default.
 
 ## Data storage
@@ -546,14 +552,14 @@ spec:
 On a server, each engine runs in a containerd container and keeps its SQLite files under
 `<storage.dataDir>/providers/sqldatabase`, where they survive a restart; with `storage.mode: memory`, they are lost
 when funcd stops. The process runtime starts no engine. A
-[BackupSchedule](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespecscope) that lists a database under
+[BackupSchedule](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespecscope) that lists a database under
 `scope.databases` copies it, and a Restore loads it back.
 
 ## Status
 
 `funcdctl get sqldatabase notes-db -n default -o json` and `funcdctl get function notes -n default -o json` print the
 status; with `funcdctl dev`, add the `--server` and `--token` flags of its banner. `status.bindings` counts the
-Functions that bind the database.
+Functions that bind the database. `funcdctl logs sqldatabase/notes-db -n default` prints what its engine wrote.
 
 | Phase or condition | Reason | Meaning |
 | --- | --- | --- |
@@ -585,12 +591,12 @@ Functions that bind the database.
 | `no node interpreter found for the node handler` | Put Node.js on the `PATH`, or set `FUNCD_NODE` to the path of `node`. |
 | `no python interpreter found for the python handler` | Put Python 3.12 or later on the `PATH` as `python3`, or set `FUNCD_PYTHON` to its path. Under `uv run`, uv puts its environment's `python3` first. |
 | `cannot load the runtime shim (needs Python ≥3.12; set FUNCD_PYTHON)` | Put Python 3.12 or later on the `PATH` as `python3`, or set `FUNCD_PYTHON` to its path. |
-| `the folder holds a SQL database, but this funcdctl has no SQL engine` | Install the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), which includes the SQL engine, or build the engine as the message says. |
+| `the folder holds a SQL database, but this funcdctl has no SQL engine` | Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), which includes the SQL engine, or build the engine as the message says. |
 
 ## Run it locally
 
 - `funcdctl dev` runs each engine as a local process, without `spec.resources`.
-- It deletes the data at stop. With [`--persist`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev), it keeps it in
+- It deletes the data at stop. With [`--persist`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev), it keeps it in
   `.funcd-dev/sql`; delete that folder to start the databases empty. `git status` lists the persist folder.
 - Unlike for Buckets, it gives no role on databases, so a write that a platform refuses is refused locally too.
 

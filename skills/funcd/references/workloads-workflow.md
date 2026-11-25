@@ -1,6 +1,6 @@
 # Workflow
 
-Source: https://pyvvo.github.io/funcd/docs/develop/workloads/workflow.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/workloads/workflow.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -27,13 +27,13 @@ Run a Workflow, start runs and read their steps and logs, branch on a step's out
 
 ## Usage
 
-A [Workflow](https://pyvvo.github.io/funcd/docs/platform/workloads/workflow.md) runs a series of **steps** for each input, and passes each
+A [Workflow](https://funcd.dev/docs/platform/workloads/workflow.md) runs a series of **steps** for each input, and passes each
 step's output to the steps after it. A step calls a Function, runs another Workflow, or is a **built-in step** that
 funcd runs itself.
 
 The first example runs the TypeScript Workflow `pipeline` once, a **run**, with the amount 4; its child run's step
 logs the score 40. Python steps run the same way, as [Share a database between steps](#share-a-database-between-steps)
-shows. Install the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md) and Git, and put Node.js on the `PATH`.
+shows. Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md) and Git, and put Node.js on the `PATH`.
 
 ### TypeScript
 
@@ -69,9 +69,9 @@ spec:
 ```
 
 The Workflow `pipeline`, in `parent.yaml`. A run starts at the first step, `feed`. `sub` runs once the steps under
-[`dependsOn`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecsteps) have succeeded, with their output; a step without `dependsOn` follows the one
-listed before it. `sub` runs `scorer` as a **child run** through [`workflow.ref`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecstepsworkflow).
-[`pooling`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecpooling) gives each step's Function a worker of its own and keeps it running:
+[`dependsOn`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecsteps) have succeeded, with their output; a step without `dependsOn` follows the one
+listed before it. `sub` runs `scorer` as a **child run** through [`workflow.ref`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecstepsworkflow).
+[`pooling`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecpooling) gives each step's Function a worker of its own and keeps it running:
 
 ```yaml
 # pipeline: a Workflow whose step sub runs the Workflow scorer of child.yaml as a child run. feed's output is sub's
@@ -98,8 +98,8 @@ spec:
         - feed
 ```
 
-In another terminal, start a run with [`funcdctl workflow run`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-run),
-then repeat [`describe`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-describe) until the phase is `Succeeded`,
+In another terminal, start a run with [`funcdctl workflow run`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-run),
+then repeat [`describe`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-describe) until the phase is `Succeeded`,
 `Failed` or `Cancelled`. Without a name, funcd names a run after its Workflow with a suffix; two runs that exist at
 once cannot share a name.
 
@@ -115,7 +115,7 @@ full logs: funcdctl workflow logs run-1
 ```
 
 `attempts` counts calls of a step's Function; `sub` calls none itself. The **trace ID** is carried by each call of the
-run. A step's handler is a [Function's handler](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md): its input arrives in `event.data` and its
+run. A step's handler is a [Function's handler](https://funcd.dev/docs/develop/workloads/function.md): its input arrives in `event.data` and its
 return value is the step's output. The handler of `score`:
 
 ```ts
@@ -151,7 +151,7 @@ Keep the example running for the next two sections.
 
 ## Read a run's logs
 
-[`funcdctl workflow logs`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-logs) prints a run's records, child runs
+[`funcdctl workflow logs`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-logs) prints a run's records, child runs
 included, found by its trace ID. Records appear within `funclog.segmentMaxAge`, or about a second under
 `funcdctl dev`, so repeat the command:
 
@@ -163,11 +163,11 @@ $ funcdctl --server http://127.0.0.1:8081 --token funcd-dev-token workflow logs 
 
 `-o wide` adds `source` (`console`, `logging`, `stdout` or `stderr`), `inv`, the call, and `trace`. `--step feed`
 keeps one step's records; a built-in or workflow step has none. `--severity`, `--since` and `--limit` filter as for
-[`funcdctl logs`](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#read-a-functions-logs).
+[`funcdctl logs`](https://funcd.dev/docs/develop/workloads/function.md#read-a-functions-logs).
 
 ## Replay a run from a step
 
-[`funcdctl workflow replay`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-replay) starts a new run from an ended one:
+[`funcdctl workflow replay`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-replay) starts a new run from an ended one:
 the step that `--from` names and the steps after it run again, and the others keep their outputs:
 
 ```console
@@ -190,10 +190,10 @@ unless `--allow-drift`. Press Ctrl-C in the first terminal to stop.
 
 By default, a step runs once all its parents have succeeded.
 
-- [`when.condition`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecstepswhen) is a JavaScript expression between `${{` and `}}` over `input` and
+- [`when.condition`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecstepswhen) is a JavaScript expression between `${{` and `}}` over `input` and
   `step.<name>.output` of a parent whose output has a schema. A false condition makes the step `Skipped`, with the
   steps that need it.
-- [`join`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecsteps) `all`, the default, skips the step unless every parent succeeded; `any` waits for
+- [`join`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecsteps) `all`, the default, skips the step unless every parent succeeded; `any` waits for
   every parent, then runs on the outputs of those that succeeded.
 
 funcd checks each condition against the contracts before the Workflow is Ready: one that reads a missing field, uses
@@ -274,26 +274,26 @@ spec:
 
 The last two steps of `orders` are built-in steps, with no Function:
 
-- [`builtin.wait`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecstepsbuiltin) waits a duration, or a `${{ }}` expression's, then passes its
-  input on. It counts toward the run's [`timeout`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspec), and a cancel ends it.
+- [`builtin.wait`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecstepsbuiltin) waits a duration, or a `${{ }}` expression's, then passes its
+  input on. It counts toward the run's [`timeout`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspec), and a cancel ends it.
 - `builtin.pass` outputs the value of a `${{ }}` expression, checked only when the step runs, so an error fails it.
 
 ## Pass data between steps
 
 - The first step receives the run's input. A step with one parent receives its output; with several, an object of
   their outputs keyed by step name.
-- A step's [`params`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecsteps) are merged over its input, and win. A wait step ignores them.
+- A step's [`params`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecsteps) are merged over its input, and win. A wait step ignores them.
 - An input or output holds at most `workflow.payloadLimit` bytes; larger or shared data goes in a
   [store](#share-a-database-between-steps).
 
 ## Share a database between steps
 
-A Workflow declares its stores at the root of its spec, under [`spec.kv`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspeckv),
-[`spec.buckets`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecbuckets), [`spec.sql`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecsql),
-[`spec.lakes`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspeclakes), [`spec.configMaps`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecconfigmaps) and
-[`spec.secrets`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecsecrets): a `name` defines a store, whose `owner` names a step that can write it,
+A Workflow declares its stores at the root of its spec, under [`spec.kv`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspeckv),
+[`spec.buckets`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecbuckets), [`spec.sql`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecsql),
+[`spec.lakes`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspeclakes), [`spec.configMaps`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecconfigmaps) and
+[`spec.secrets`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecsecrets): a `name` defines a store, whose `owner` names a step that can write it,
 and a `ref` declares an existing one. A step reaches a store only through its
-[`function.bindings`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecstepsfunctionbindings), which allow reading; a `ref` step keeps its
+[`function.bindings`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecstepsfunctionbindings), which allow reading; a `ref` step keeps its
 Function's own bindings.
 
 The Python example sql-readings stores a sensor's values in one step and summarizes them in the next. It needs
@@ -317,7 +317,9 @@ metadata:
 spec:
   sql:
     - name: readings-db
-      owner: ingest
+      owner:
+        kind: Function
+        name: ingest
   steps:
     - name: ingest
       function:
@@ -429,15 +431,15 @@ Another run for the same sensor adds its values after the stored ones. Press Ctr
 
 - A 5xx answer, a timeout or a transport error is retried; a 4xx answer, such as a contract's 422, fails the step at
   once, with an error such as `workflow.dispatch: default/pipeline-feed rejected the step (422)`.
-- [`function.retry.maxAttempts`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecstepsfunctionretry) counts the calls, the first included, by
+- [`function.retry.maxAttempts`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecstepsfunctionretry) counts the calls, the first included, by
   default `workflow.defaultRetry`, 1. `retry.backoff`, by default `workflow.defaultRetryBackoff`, 0 seconds, doubles at
   each call, up to an hour.
-- [`function.timeout`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspecstepsfunction), by default `workflow.defaultStepTimeout`, 300 seconds,
+- [`function.timeout`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspecstepsfunction), by default `workflow.defaultStepTimeout`, 300 seconds,
   bounds each call.
 - A failed step fails the run with `StepFailed`: its dependents are `Skipped`, and steps still running elsewhere go back
-  to `Pending`. The Workflow's [`timeout`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspec), paused time excluded, fails a run with
+  to `Pending`. The Workflow's [`timeout`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspec), paused time excluded, fails a run with
   `RunTimedOut`.
-- [`onFailure`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowspec) names a step called once when a run fails, with `workflow`, `run`, `failedStep`,
+- [`onFailure`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowspec) names a step called once when a run fails, with `workflow`, `run`, `failedStep`,
   `reason` and `input`; it never changes the phase, and a cancel does not call it.
 
 A step can be called more than once, even past `maxAttempts` when a restart cuts a call; the `X-Funcd-Attempt` header
@@ -445,24 +447,24 @@ carries the attempt number. Make a repeated call harmless.
 
 ## Pause, resume or cancel a run
 
-[`funcdctl workflow pause`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-pause) sets the run's
-[`paused`](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow/spec.md#workflowrunspec): nothing new starts, calls in flight finish, and the phase is `Paused`, which the
-timeout does not count. [`resume`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-resume) clears it.
-[`cancel`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-cancel) starts nothing more and drops the calls in flight,
+[`funcdctl workflow pause`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-pause) sets the run's
+[`paused`](https://funcd.dev/docs/develop/workloads/workflow/spec.md#workflowrunspec): nothing new starts, calls in flight finish, and the phase is `Paused`, which the
+timeout does not count. [`resume`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-resume) clears it.
+[`cancel`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-cancel) starts nothing more and drops the calls in flight,
 which may still have done their work; the run ends `Cancelled`, without `onFailure`. A cancel wins over a pause, and an
 ended run ignores both.
 
 ## Start a run on a schedule
 
-A [Sensor](https://pyvvo.github.io/funcd/docs/develop/services/events.md) action that names a
-[`workflow`](https://pyvvo.github.io/funcd/docs/develop/services/events/spec.md#sensorspecdo) starts a run for each event, with the action's input; with a
-`timer` EventSource, on a [schedule](https://pyvvo.github.io/funcd/docs/develop/services/events/spec.md#eventsourcespectimerevents). The run is named after
+A [Sensor](https://funcd.dev/docs/develop/services/events.md) action that names a
+[`workflow`](https://funcd.dev/docs/develop/services/events/spec.md#sensorspecdo) starts a run for each event, with the action's input; with a
+`timer` EventSource, on a [schedule](https://funcd.dev/docs/develop/services/events/spec.md#eventsourcespectimerevents). The run is named after
 the Sensor and the action; the action succeeds once the run exists, and a run whose input does not fit the contract or
 `workflow.payloadLimit` fails at its start.
 
 ## Limits and quotas
 
-- An input or output holds at most [`workflow.payloadLimit`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), 256 KiB by
+- An input or output holds at most [`workflow.payloadLimit`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 256 KiB by
   default: a larger input is refused, or fails a Sensor's run with `PayloadLimitExceeded`; a larger output fails its
   step, with no retry.
 - At most `workflow.maxStepsInFlight` step calls run at once, 64 by default.
@@ -479,7 +481,7 @@ from its first step. funcd deletes an ended run after `workflow.retention`, 720 
 ## Status
 
 Read a Workflow with `funcdctl get workflow <name> -n <namespace> -o json`, and a run with
-`funcdctl workflow describe <run>`; [`funcdctl workflow runs`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-runs)
+`funcdctl workflow describe <run>`; [`funcdctl workflow runs`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-workflow-runs)
 lists a namespace's runs, newest first. Before a Workflow is Ready, funcd checks every **edge**, from a step's output
 to the next step's input: each required field must come from its parents or `params`, with the same type. A failed
 check sets `SchemaMismatch` to `True`, and the message names the step and the field.
@@ -539,7 +541,7 @@ to a store. `status.pins` names the Function revisions that the run calls.
 - It gives each step's Function its own worker; with `minReplicas` 0, the worker stops after about 5 minutes idle.
 - A changed build or contract gives the step's Function a new revision within a second; a step added after the start
   needs a restart.
-- The run state stays in memory, even with [`--persist`](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#run-it-locally).
+- The run state stays in memory, even with [`--persist`](https://funcd.dev/docs/develop/workloads/function.md#run-it-locally).
 
 ## Examples
 
