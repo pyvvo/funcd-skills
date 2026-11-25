@@ -35,7 +35,7 @@ The server's `addons.registries` must list the registry of the add-on's image, `
 registers the add-on from a release, piping its manifest to `funcdctl apply -f -`:
 
 ```sh
-curl -fsSL https://github.com/pyvvo/funcd-addons/releases/download/v0.3.0/rauthy.yaml | funcdctl apply -f -
+curl -fsSL https://github.com/pyvvo/funcd-addons/releases/latest/download/rauthy.yaml | funcdctl apply -f -
 ```
 
 The Addon lists the runtimes the add-on ships, each with its image pinned by digest. rauthy's one entry serves the
@@ -94,19 +94,7 @@ spec:
             target: spec.config.provider
             resync: 10m
             function:
-              ref: rauthy-settings
-            schema:
-              type: object
-              additionalProperties: false
-              properties:
-                provider:
-                  type: string
-                lengthMin:
-                  type: integer
-                  minimum: 8
-              required:
-                - provider
-                - lengthMin
+              image: ghcr.io/example/rauthy-settings@sha256:b8390e254d5f99832bdcfa0567d144725d1d96907c9da01dc5917f71c3989cba
             constraints:
               count:
                 perTarget: 1
@@ -186,10 +174,11 @@ before its Addon turns `Ready` once the Addon ships its runtime for Functions. S
 under `funcdctl dev` on the Docker or nerdctl that runs dev's add-on engines; on a process server it is
 `RuntimeUnavailable`. A Function on such a runtime is a cloudevent one, with the bindings its image's shim builds in.
 
-Under `funcdctl dev`, the worker's bundle is copied into a volume of its own, and the worker reaches funcd's local API
-at `FUNCD_INVOKE_URL`, sending `FUNCD_INVOKE_TOKEN` in the `X-Funcd-Invoke-Token` header, as funcd's shims do. On a
-Linux host it shares the host's network; on an engine in a VM, as on macOS, it reaches funcd at `funcd.host`. With no
-container engine, or a rootless one, the Function or Job is `RuntimeUnavailable`, naming why.
+Under `funcdctl dev`, the worker's bundle is the one for the container engine's platform, such as `linux/arm64` on a
+Mac. It is copied into a volume of its own, and the worker reaches funcd's local API at `FUNCD_INVOKE_URL`, sending
+`FUNCD_INVOKE_TOKEN` in the `X-Funcd-Invoke-Token` header, as funcd's shims do. On a Linux host it shares the host's
+network; on an engine in a VM, as on macOS, it reaches funcd at `funcd.host`. With no container engine, or a rootless
+one, the Function or Job is `RuntimeUnavailable`, naming why.
 
 ## Call its engine from a Function
 
@@ -263,27 +252,10 @@ edge. The Function's own dial of the engine's address is refused: only funcd rea
 ## Apply its settings
 
 An Addon can add settings kinds. An object of one runs no engine and names its target, an object of the Addon's kind:
-rauthy's `RauthyPasswordPolicy` holds the password policy of one IdentityProvider. funcd checks each write against the
-kind's schema and its constraints, here one policy per IdentityProvider. It then sends each target's full list of
-objects to the kind's Function, `rauthy-settings`, which applies the list through its binding of the target
+rauthy's `RauthyPasswordPolicy` holds the password policy of one IdentityProvider. The kind's Function applies it, and
+funcd checks each write against that Function's contract and the kind's constraints, here one policy per
+IdentityProvider
 ([complete file](https://github.com/pyvvo/funcd/blob/main/api/types/v1alpha1/examples/addons/settings.yaml)):
-
-```yaml
-apiVersion: funcd.io/v1alpha1
-kind: Function
-metadata:
-  name: rauthy-settings
-  namespace: default
-  resourceGroup: default
-spec:
-  runtime: nodejs22
-  handler: reconcile
-  image: registry.example.com/rauthy-settings:0.2.0
-  bindings:
-    addon:
-      - alias: idp
-        object: login
-```
 
 ```yaml
 apiVersion: funcd.io/v1alpha1
@@ -296,20 +268,27 @@ spec:
   config:
     provider: login
     lengthMin: 16
+    lengthMax: 64
 ```
 
-funcd calls the Function at each change of a target's list, after a failed call's backoff, and at the kind's
-`resync`, so a setting changed at the engine's own API is put back. Each call is a CloudEvent of type
-`funcd.addon.settings`, whose data holds the kind, the cause, the target with the alias that binds it, and each
-object's name, uid, generation and config. The answer holds a result per object: `ok`, or a reason and a message.
-With no object left, the list is empty, and the Function puts the engine's default back. rauthy's Function puts the
-policy with rauthy's API key `settings`, which `funcdctl rauthy keys` has rauthy create at its first start:
+Once a policy names the IdentityProvider `login`, funcd creates the Function `login-rauthypasswordpolicy` from the
+image that the Addon names. The Function binds `login` and its Secrets, and has no address: only funcd calls it. funcd
+sends it the IdentityProvider's full list of policies, and each policy turns `Ready` on its answer.
+
+funcd calls the Function at each change of a target's list, after a failed call's backoff, and at the kind's `resync`,
+so a setting changed at the engine's own API is put back. Each call is a CloudEvent of type `funcd.addon.settings`,
+whose data holds the kind, the cause, the target with the alias that binds it, and each object's name, uid, generation
+and config. The answer holds a result per object: `ok`, or a reason and a message. With no object left, the list is
+empty: the Function puts the engine's default back, and funcd then removes it. While no policy has named an
+IdentityProvider, funcd creates no Function for it and leaves its engine's own settings as they are. rauthy's Function
+puts the policy with rauthy's API key `settings`, which `funcdctl rauthy keys` has rauthy create at its first start:
 
 ```mjs
-// The Function of rauthy's settings kind RauthyPasswordPolicy (funcd ADR-0341): funcd sends it every policy that names
-// one IdentityProvider, and it puts that policy into rauthy through its binding of the IdentityProvider (funcd
-// ADR-0338), or rauthy's default when the list is empty. rauthy holds one policy per instance, so the kind allows one
-// per IdentityProvider. It signs in with the API key settings, which funcdctl rauthy keys has rauthy create.
+// The Function of rauthy's settings kind RauthyPasswordPolicy (funcd ADR-0341, ADR-0358): funcd creates it from its image
+// for each IdentityProvider that a policy names and sends it that policy, and it puts the policy into rauthy through its
+// binding of the IdentityProvider (funcd ADR-0338), or rauthy's default when the list is empty. It throws when it cannot
+// put the default back, so funcd calls it again instead of removing it. rauthy holds one policy per instance, so the kind
+// allows one per IdentityProvider. It signs in with the API key settings, which funcdctl rauthy keys has rauthy create.
 
 const DEFAULT = {
   length_min: 14,
@@ -333,39 +312,42 @@ const request = (c) => ({
   not_recently_used: c.notRecentlyUsed ?? null,
 });
 
-const all = (objects, result) => ({ results: objects.map((o) => ({ name: o.name, ...result })) });
-
-export const reconcile = async (ctx, event) => {
-  const call = event.data;
-  const objects = call.objects ?? [];
+// put puts policy into the rauthy bound as alias, and answers why it could not, or null.
+const put = async (ctx, alias, policy) => {
   const secret = await ctx.secret.get('BOOTSTRAP_API_KEY_SECRET');
-  const policy = objects.length > 0 ? request(objects[0].config) : DEFAULT;
   let res;
   try {
-    res = await ctx.addon.fetch(call.target.alias, '/auth/v1/password_policy', {
+    res = await ctx.addon.fetch(alias, '/auth/v1/password_policy', {
       method: 'PUT',
       headers: { Authorization: `API-Key settings$${secret}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(policy),
     });
   } catch (err) {
-    return all(objects, { ok: false, reason: 'EngineUnreachable', message: String(err?.message ?? err) });
+    return { reason: 'EngineUnreachable', message: String(err?.message ?? err) };
   }
-  if (!res.ok) {
-    const text = (await res.text()).slice(0, 300);
-    return all(objects, { ok: false, reason: 'EngineRefused', message: `rauthy answered ${res.status}: ${text}` });
-  }
-  return all(objects, { ok: true });
+  if (res.ok) return null;
+  return { reason: 'EngineRefused', message: `rauthy answered ${res.status}: ${(await res.text()).slice(0, 300)}` };
+};
+
+export const handle = async (ctx, event) => {
+  const { target, objects } = event.data;
+  const failed = await put(ctx, target.alias, objects.length > 0 ? request(objects[0].config) : DEFAULT);
+  if (failed && objects.length === 0) throw new Error(`rauthy's default password policy is not back: ${failed.message}`);
+  return { results: objects.map((o) => ({ name: o.name, ok: !failed, ...failed })) };
 };
 ```
 
 A target may name its own Function for a kind in `spec.functions`, in place of the kind's, so two copies of an App
-template in one namespace each apply their own.
+template in one namespace each apply their own, and an Addon may name an existing Function of the namespace with
+`function.ref` instead of an image. Such a Function binds the target itself, and no schema checks a write of its
+objects: its contract refuses the call.
 
 ## Reconcile objects with a Function
 
 An Addon whose kind entry serves `Engineless` adds a kind whose objects run no engine, such as stacks that a Job
-applies outside funcd: a Function of each object's namespace reconciles them, the one the entry's `function.ref` names
-or the one an object names for its own kind in `spec.functions`
+applies outside funcd: a Function reconciles them. funcd creates one for each object from the entry's `function.image`,
+and it binds the Secrets and the Jobs of the object's `bindings`. With `function.ref`, it is an existing Function of the
+namespace, and an object may name its own for its kind in `spec.functions`
 ([complete file](https://github.com/pyvvo/funcd/blob/main/api/types/v1alpha1/examples/addons/engineless.yaml)):
 
 ```yaml
@@ -382,21 +364,7 @@ spec:
         kind: InfraStack
         resync: 30m
         function:
-          ref: infrastack-reconciler
-        config:
-          type: object
-          additionalProperties: false
-          properties:
-            job:
-              type: string
-            variables:
-              type: object
-              additionalProperties: false
-              properties:
-                zone:
-                  type: string
-          required:
-            - job
+          image: ghcr.io/example/infrastack-reconciler@sha256:73b6ae022fd1e39cc9a4c710911a7f6a1dfe85886193a7b0234ee3381652d9da
 ```
 
 ```yaml
@@ -408,17 +376,20 @@ metadata:
   resourceGroup: default
 spec:
   deletion: delete
+  bindings:
+    job:
+      - alias: stack
+        job: bunny-edge
   config:
-    job: bunny-edge
     variables:
       zone: funcd-tunnel
 ```
 
-funcd sends the Function the list of the namespace's objects it reconciles, deleting ones included, at each change of
-the list, after a failed call's backoff, at the kind's `resync`, 10 minutes when unset, and once a JobRun of the
-namespace ends. An object is `Pending` with `Progressing` until the Function answers for its generation, then `Ready`
-on an ok, or with the Function's reason, such as `AwaitingApproval`. [Build an add-on](https://funcd.dev/docs/develop/services/addons/build.md#engineless-kinds) shows
-the call and its answer.
+funcd sends the Function the list of the objects it reconciles, deleting ones included, at each change of the list,
+after a failed call's backoff, at the kind's `resync`, 10 minutes when unset, and once a JobRun of the namespace ends.
+A Function from an image gets its one object. An object is `Pending` with `Progressing` until the Function answers for
+its generation, then `Ready` on an ok, or with the Function's reason, such as `AwaitingApproval`. [Build an
+add-on](https://funcd.dev/docs/develop/services/addons/build.md#engineless-kinds) shows the call and its answer.
 
 An object with `deletion: delete` stays at its deletion until its Function has destroyed what it holds. The DELETE
 answers 202 with the object, which keeps `metadata.deletionTimestamp`, the reason `Deleting` until the Function's first
@@ -440,8 +411,8 @@ engineless parts are gone.
 
 An App template can carry the add-on with the Functions, values and hooks that run beside it: its `addon.yaml` holds the
 Addon, which an admin's `funcdctl app deploy` registers or updates before the App, and the App's `addons` section holds
-the objects of its kind. rauthy's template holds an IdentityProvider `<app>-login` and its own settings Function
-`<app>-settings`, which the IdentityProvider names for its policies:
+the objects of its kind. rauthy's template holds an IdentityProvider `<app>-login`, whose policies funcd applies with
+the Function that the Addon names:
 
 ```yaml
 secrets:
@@ -460,25 +431,9 @@ addons:
         - ${{ values.keys }}
     ingress:
       host: ${{ values.host }}
-    functions:
-      - kind: RauthyPasswordPolicy
-        ref: ${{ app.name + "-settings" }}
-functions:
-  - name: ${{ app.name + "-settings" }}
-    runtime: nodejs22
-    handler: reconcile
-    image: ${{ images.settings }}
-    bindings:
-      addon:
-        - alias: idp
-          object: ${{ app.name + "-login" }}
-      secret:
-        - ${{ values.keys }}
 ```
 
 ```sh
-funcdctl push settings/rauthy-settings.mjs <registry>/rauthy-settings:0.2.0
-funcdctl app lock app -f values.yaml
 funcdctl push --template app <registry>/rauthy:0.2.0
 funcdctl app deploy <registry>/rauthy:0.2.0 -f values.yaml --name web-auth
 ```
@@ -491,7 +446,10 @@ add-on](https://funcd.dev/docs/develop/workloads/app.md#carry-an-add-on) shows t
 An admin's change of an Addon stamps a revision, an AddonRevision named after the Addon and its generation, such as
 `rauthy-2`, and replaces no engine: each object keeps running the revision that `status.addonRevision` names. An edit
 of the object moves it to the Addon's current revision, and an App's next revision moves its parts, its hooks around
-the move. An admin lists the revisions with `funcdctl get addonrevisions`; funcd removes one that no object pins and no
+the move. A settings kind follows its target: its Function's image and contract and its constraints are those of the
+target's revision, so a field that a newer image takes gets a 422 until the target moves. A settings object that the
+newer contract refuses waits with `ReconcileFailed`, naming the path, and the target's other objects of the kind wait
+with it. An admin lists the revisions with `funcdctl get addonrevisions`; funcd removes one that no object pins and no
 App's revision records. Under `funcdctl dev`, every object follows the current revision at once.
 
 ## Back it up
@@ -532,6 +490,9 @@ permit(principal, action == Action::"addon::call", resource)
 A namespace [Policy](https://funcd.dev/docs/develop/security-and-networking/security/spec.md#policy) can forbid a call that a binding allows,
 with 403. An alias the Function does not bind, and a proxy request with no token or a token of no Function, are 403 too.
 
+A Function that funcd creates from an image reads every key of the Secrets that its object binds, while an engine gets
+the keys that its Addon lists in `secretKeys`.
+
 ## Limits and quotas
 
 - A namespace holds at most `addons.maxObjectsPerNamespace` objects of add-on kinds, settings kinds apart, 20 by
@@ -547,6 +508,7 @@ with 403. An alias the Function does not bind, and a proxy request with no token
 ## Status
 
 ```sh
+funcdctl get addons rauthy -o json
 funcdctl get identityproviders login -n default -o json
 funcdctl get rauthypasswordpolicys strict -n default -o json
 funcdctl logs identityprovider/login -n default
@@ -557,6 +519,8 @@ funcdctl logs identityprovider/login -n default
 
 | Object | Reason | Meaning |
 | --- | --- | --- |
+| An Addon | `ArtifactNotReady` | The image of a kind's Function cannot be read. funcd tries again every `runtime.supervisionPeriod`; engines run meanwhile |
+| | `SettingsInvalid` | A settings kind's constraint names a field that its Function's contract lacks |
 | An object that runs an engine | `EngineNotReady` | The engine does not answer its readiness path yet |
 | | `AddonNotFound` | No Addon registers its kind |
 | | `ConfigInvalid`, `EnvInvalid` | Its config no longer fits the Addon's schema, or its env does not evaluate |
@@ -565,10 +529,12 @@ funcdctl logs identityprovider/login -n default
 | A settings object | `Progressing` | No answer of its Function for its generation yet |
 | | `ReconcileFailed`, `NoResult` | The call failed, or its answer left the object out; the Function's own reason when it gives one |
 | | `TargetNotFound`, `TargetNotReady` | Its target is missing or not Ready |
-| | `FunctionNotFound`, `FunctionNotBound` | Its Function is missing, or does not bind its target |
+| | `ArtifactNotReady` | The image of its kind's Function is not read yet |
+| | `FunctionNotFound`, `FunctionNotBound` | Its Function is missing, its target's revision lacks its kind, or its Function does not bind its target |
+| | `FunctionNotOwned` | Another Function has the name of the one that funcd would create |
 | An engineless object | `Progressing` | No answer of its Function for its generation yet |
 | | `ReconcileFailed`, `NoResult` | The call failed, or its answer left the object out; the Function's own reason when it gives one |
-| | `AddonNotFound`, `AddonRevisionNotFound`, `FunctionNotFound` | Its Addon, its pinned revision or its Function is missing, and no call carries it |
+| | `AddonNotFound`, `AddonRevisionNotFound`, `FunctionNotFound`, `ArtifactNotReady`, `FunctionNotOwned` | Its Addon, its pinned revision, its Function or its image's contract is missing, or another Function has its Function's name, and no call carries it |
 | | `Deleting` | Held at its deletion: its Function has not answered a call that carried it as deleting yet |
 | A Function or a Job on its runtime | `RuntimeUnavailable` | The entry does not serve the workload, no worker driver of the server runs an image, or the Addon that shipped the Revision's image is gone |
 | A Function that binds an object | `AddonObjectNotFound` | The object does not exist |
