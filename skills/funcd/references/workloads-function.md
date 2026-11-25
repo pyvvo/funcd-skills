@@ -1,6 +1,6 @@
 # Function
 
-Source: https://pyvvo.github.io/funcd/docs/develop/workloads/function.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/workloads/function.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -23,13 +23,13 @@ Run a Function, call it, read its status and its logs, call one Function from an
 
 ## Usage
 
-A [Function](https://pyvvo.github.io/funcd/docs/platform/workloads/function.md) is code that funcd runs when it is called: its **handler**
+A [Function](https://funcd.dev/docs/platform/workloads/function.md) is code that funcd runs when it is called: its **handler**
 answers each call. This example runs log-burst, which takes events and returns `emitted`, the number of its log calls;
 [Serve HTTP requests](#serve-http-requests) shows a Function that takes HTTP requests.
 
-Install the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), Git, curl, and Node.js, or Python 3.12 or later
+Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git, curl, and Node.js, or Python 3.12 or later
 as `python3`. `funcdctl dev` runs each Function from the code in the folder, not from the manifest's `image`, the
-[artifact](https://pyvvo.github.io/funcd/docs/platform/workloads/artifacts.md) that [`funcdctl push`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-push)
+[artifact](https://funcd.dev/docs/platform/workloads/artifacts.md) that [`funcdctl push`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-push)
 packs for a platform. `--gport` sets the port of the Function URLs, and `--cport` that of the control plane, which
 `funcdctl` reaches with `--server` and the token `funcd-dev-token`.
 
@@ -126,8 +126,8 @@ Its `phase` is `Ready`. Keep the example running for [Read a Function's logs](#r
 
 ## Read a Function's logs
 
-[`funcdctl logs`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-logs) prints a Function's log records, the latest 1000 by
-default: each `console`, `logging` or [`ctx.log`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#handler-api) call, and each line of standard output as
+[`funcdctl logs`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-logs) prints a Function's log records, the latest 1000 by
+default: each `console`, `logging` or [`ctx.log`](https://funcd.dev/docs/develop/workloads/function/spec.md#handler-api) call, and each line of standard output as
 `INFO` or of standard error as `ERROR`. A record appears within `funclog.segmentMaxAge`, 10 seconds by default, or
 about a second under `funcdctl dev`, so repeat the command:
 
@@ -144,8 +144,8 @@ $ funcdctl --server http://127.0.0.1:8081 --token funcd-dev-token logs log-burst
 
 ## Write a handler and its contract
 
-A Function's code exports the handler that the manifest's [`handler`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspec) names, run by its
-[`runtime`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspec). A worker calls it with the context, through which it logs and reaches other
+A Function's code exports the handler that the manifest's [`handler`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec) names, run by its
+[`runtime`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec). A worker calls it with the context, through which it logs and reaches other
 Functions and its stores, and the **event**: the call's JSON body arrives as `event.data` (`event["data"]` in Python),
 unless the body is itself an event, as [Call another Function](#call-another-function) explains. The return value is
 the response.
@@ -305,16 +305,22 @@ bundled dependency (`--no-check` skips it), and for `--hermetic`.
 
 ## Call another Function
 
-A Function calls another of its [namespace](https://pyvvo.github.io/funcd/docs/platform/tenancy-and-limits/namespaces.md) over a **link**
-declared under [`spec.bindings.links`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecbindingslinks): an `alias` that its code uses and a `target`.
-[`ctx.invoke`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#handler-api) takes the alias and an input, and returns the target's result.
+A Function calls another of its [namespace](https://funcd.dev/docs/platform/tenancy-and-limits/namespaces.md) over a **link**
+declared under [`spec.bindings.links`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecbindingslinks): an `alias` that its code uses and a `target`.
+[`ctx.invoke`](https://funcd.dev/docs/develop/workloads/function/spec.md#handler-api) takes the alias and an input, and returns the target's result.
 
 - An input with a top-level `data` or `specversion` key is the event itself; any other input becomes `event.data`.
 - funcd checks the input against the target's contract. A failed call throws, or raises a `RuntimeError` in Python,
   with the HTTP status and the response.
 - The target must exist when the caller is applied, and a link cannot close a cycle.
-- A target that serves HTTP is called with [`ctx.fetch`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#handler-api), in TypeScript only; `ctx.invoke`
+- A target that serves HTTP is called with [`ctx.fetch`](https://funcd.dev/docs/develop/workloads/function/spec.md#handler-api), in TypeScript only; `ctx.invoke`
   refuses it.
+- An add-on object's engine is called through funcd, under an alias of
+  [`spec.bindings.addon`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecbindings), with `ctx.addon.fetch`:
+  [Call its engine from a Function](https://funcd.dev/docs/develop/services/addons.md#call-its-engine-from-a-function).
+- A run of a Job is started and read through funcd, under an alias of
+  [`spec.bindings.job`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecbindingsjob), with `ctx.job.start` and `ctx.job.get`:
+  [Start a run from a Function](https://funcd.dev/docs/develop/workloads/job/start-from-a-function.md).
 
 In the TypeScript example fn-to-fn, `front` calls `greeter` over this link
 ([complete file](https://github.com/pyvvo/funcd/blob/main/api/types/v1alpha1/examples/function/link.yaml)); the Python
@@ -404,10 +410,10 @@ Press Ctrl-C in the first terminal to stop.
 
 ## Serve HTTP requests
 
-A Function whose [`protocol`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspec) is `http` gets each HTTP request, with its method, path, headers
+A Function whose [`protocol`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec) is `http` gets each HTTP request, with its method, path, headers
 and body, and answers as a web server does. It runs on Node.js, never shares a worker, and has no contract check: its
 contract file names the `runtime` and `protocol: http`, with no `input` or `output`. Only funcd's
-[edge](https://pyvvo.github.io/funcd/docs/platform/security-and-networking/networking.md) and another Function's `ctx.fetch` reach it.
+[edge](https://funcd.dev/docs/platform/security-and-networking/networking.md) and another Function's `ctx.fetch` reach it.
 
 ### TypeScript
 
@@ -460,14 +466,14 @@ $ curl -s http://127.0.0.1:8080/function/devices-api/devices
 [{"id":"1","name":"truck-7"}]
 ```
 
-The folder's [Route](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking/spec.md#route) `api` serves the same app at
+The folder's [Route](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#route) `api` serves the same app at
 `/api/devices`. Press Ctrl-C in the first terminal to stop.
 
 ## Scale a Function to zero
 
-A Function that sets neither [`replicas`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspec) nor
-[`scaling.minReplicas`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecscaling) runs no worker until its first call, which waits for a worker to
-start: a **cold start**. With [`scaling.idleTimeout`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecscaling), funcd stops the workers after that
+A Function that sets neither [`replicas`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec) nor
+[`scaling.minReplicas`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecscaling) runs no worker until its first call, which waits for a worker to
+start: a **cold start**. With [`scaling.idleTimeout`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecscaling), funcd stops the workers after that
 long without a call, and the Function is `Idle` until the next one. This Function stops after 5 minutes:
 
 ```yaml
@@ -485,7 +491,7 @@ spec:
     idleTimeout: 5m
 ```
 
-- funcd looks for idle Functions every [`invoke.reclaimInterval`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), 30
+- funcd looks for idle Functions every [`invoke.reclaimInterval`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 30
   seconds by default, so workers can outlive `idleTimeout` by that much. A call in flight keeps the Function awake.
 - A call waiting for a worker gets 503 after `invoke.activationTimeout`, 30 seconds by default; the calls that arrive
   during a start share that wait.
@@ -506,27 +512,27 @@ permit(principal, action == Action::"link::invoke", resource)
 
 - `ctx.invoke` and `ctx.fetch` reach only the caller's own links: an alias that no link declares fails with 403,
   whatever the role, with a message such as `caller default/front declares no link \"nope\" (no link is no grant)`. A
-  namespace [Policy](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md#policy) can forbid a call that a link allows, also
+  namespace [Policy](https://funcd.dev/docs/develop/security-and-networking/security/spec.md#policy) can forbid a call that a link allows, also
   with 403.
 - A client outside funcd calls through the edge, at `/function/<name>` or a Route, as
-  [`spec.ingress`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecingress) allows. An [`auth.mode`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecingressauth) of
+  [`spec.ingress`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecingress) allows. An [`auth.mode`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecingressauth) of
   `authenticated` needs `server.auth.edge: true` and a credential that may get the namespace's Functions, else 401 or
   403; under `funcdctl dev`, such an address answers 401.
 
 ## Limits and quotas
 
 - A call through the edge carries at most 1 MiB, or gets 413, and must start its response within the Function's
-  [`timeout`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspec), or [`invoke.defaultTimeout`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), 60
+  [`timeout`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec), or [`invoke.defaultTimeout`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 60
   seconds by default, a cold start included. Past it, the caller gets 504 while the handler goes on, so a retry can
-  repeat its effects; a Python handler gets an exception a second later. [`ctx.remainingMs`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#handler-api)
+  repeat its effects; a Python handler gets an exception a second later. [`ctx.remainingMs`](https://funcd.dev/docs/develop/workloads/function/spec.md#handler-api)
   (`remaining_ms`) returns the time left, or `null` with no deadline.
 - A handler that blocks its worker, such as a loop that never awaits or a `time.sleep`, fails its liveness check, and
   funcd replaces the worker after `runtime.livenessTimeout`, 30 seconds by default.
-- A call over a link waits up to the link's [`timeout`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecbindingslinks), 30 seconds by default and
+- A call over a link waits up to the link's [`timeout`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecbindingslinks), 30 seconds by default and
   5 minutes at most, a cold start included, then fails with 503. Its input holds at most 1 MiB, or gets 413; a larger
   result gets 500 when the target's contract checks results, else 413, as through `ctx.fetch`.
 - At most `invoke.maxNestedInFlight` link calls to one Function run at once, 10 by default; one more gets 429.
-- [`resources`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecresources) sets the CPU and memory of a Function's own workers, by default
+- [`resources`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecresources) sets the CPU and memory of a Function's own workers, by default
   `functions.defaultResources`, 1 CPU and 512 MiB; only containerd enforces them, and kills a worker over its memory.
 - A log record over `funclog.maxRecordBytes`, 64 KiB by default, is cut.
 
@@ -555,7 +561,7 @@ phase row gives a reason of `Ready`.
 | `IngressReady` condition | | Reports the Function's own Route. Only a Function whose `spec.ingress` sets a host or a path has it. |
 
 funcd refuses the calls of a `Failed` Function at once with 503. `status.currentRevision` names the latest spec's
-[revision](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionstatus).
+[revision](https://funcd.dev/docs/develop/workloads/function/spec.md#functionstatus).
 
 ## Changes and deletion
 
@@ -565,9 +571,9 @@ funcd refuses the calls of a `Failed` Function at once with 503. `status.current
   once idle, and is cut off after `runtime.drainGrace`, 30 seconds by default. A revision that cannot load its handler
   takes no call.
 - A revision keeps the image digest of its creation, so push new code under a new tag, or set
-  [`imageDigest`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspec).
+  [`imageDigest`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec).
 - A delete stops the workers at once, cutting their calls, and removes the revisions, with a Lake or a
-  [ConfigMap](https://pyvvo.github.io/funcd/docs/develop/workloads/configuration.md) that the Function declares by `name`. A KVStore, Bucket or SQLDatabase that
+  [ConfigMap](https://funcd.dev/docs/develop/workloads/configuration.md) that the Function declares by `name`. A KVStore, Bucket or SQLDatabase that
   it declares by `name` stays, unless its `deletion` is `delete`.
 - funcd refuses to delete the target of another Function's link; remove the link first.
 
@@ -593,7 +599,7 @@ funcd refuses the calls of a `Failed` Function at once with 503. `status.current
 - It sets `replicas` and `scaling.minReplicas` to 1, so a Function never goes `Idle`.
 - It runs workers as local processes, with no isolation or limits, prints their logs, runs the namespace `default`
   only, and its edge has no authenticator.
-- Its data stays in memory unless [`--persist`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev) keeps it in `.funcd-dev`;
+- Its data stays in memory unless [`--persist`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev) keeps it in `.funcd-dev`;
   delete that folder after it stops to start from nothing.
 
 ## Examples

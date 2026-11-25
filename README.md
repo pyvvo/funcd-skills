@@ -1,6 +1,6 @@
 # funcd skills
 
-Agent skills for building on [funcd](https://pyvvo.github.io/funcd/), the single-binary serverless platform. The
+Agent skills for building on [funcd](https://funcd.dev/), the single-binary serverless platform. The
 `funcd` skill tells a coding agent to read funcd's docs before it writes, to run the work locally with
 `funcdctl dev`, and to check each manifest with `funcdctl apply --dry-run` until it passes. It follows the
 [Agent Skills](https://agentskills.io/specification) format.
@@ -54,7 +54,7 @@ An agent that reads only `AGENTS.md`: copy [AGENTS.md](AGENTS.md) into the proje
 project's own `AGENTS.md` or `CLAUDE.md`.
 
 The skill runs `funcdctl`, in its dev build, and Node.js, or Python 3.12 or later (`python3` or `FUNCD_PYTHON`). The
-[Install](https://pyvvo.github.io/funcd/docs/get-started/install) page installs funcdctl.
+[Install](https://funcd.dev/docs/get-started/install) page installs funcdctl.
 
 ## Keep it current
 

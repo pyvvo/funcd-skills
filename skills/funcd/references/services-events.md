@@ -1,6 +1,6 @@
 # Events
 
-Source: https://pyvvo.github.io/funcd/docs/develop/services/events.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/services/events.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -24,16 +24,16 @@ Call a Function or start a Workflow run when something happens, on a schedule, o
 
 ## Usage
 
-An [**EventSource**](https://pyvvo.github.io/funcd/docs/platform/services/events.md) turns something that happens into **events**: a timer, a
+An [**EventSource**](https://funcd.dev/docs/platform/services/events.md) turns something that happens into **events**: a timer, a
 new object in a Bucket, or a row change in a SQL database. A **Sensor** subscribes to events and runs an action for
 each one: it calls a Function, or starts a Workflow run.
 
 The first example calls the Function `log-burst` every 10 seconds. Each call leaves an
-[**Invocation**](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#invocation), funcd's record of the action.
+[**Invocation**](https://funcd.dev/docs/develop/workloads/function/spec.md#invocation), funcd's record of the action.
 
-Install the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md) and Git, and put Node.js, or Python 3.12 or later
+Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md) and Git, and put Node.js, or Python 3.12 or later
 as `python3`, on the `PATH`. Save this manifest as `ticker.yaml` in the example's folder, which `funcdctl dev` applies
-in the [namespace](https://pyvvo.github.io/funcd/docs/platform/tenancy-and-limits/namespaces.md) `default`:
+in the [namespace](https://funcd.dev/docs/platform/tenancy-and-limits/namespaces.md) `default`:
 
 ```yaml
 apiVersion: funcd.io/v1alpha1
@@ -67,7 +67,7 @@ spec:
 
 The first tick comes 10 seconds after the EventSource's creation. An action calls one `function` or starts one
 `workflow`, never both. The Function receives each event as a **CloudEvent** whose `data`, `{}` for a timer, funcd
-checks against the Function's [contract](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#usage). An Invocation is `Ready` once the
+checks against the Function's [contract](https://funcd.dev/docs/develop/workloads/function.md#usage). An Invocation is `Ready` once the
 Function answers without an error, or `Failed` once the delivery ends as a
 [dead letter](#handle-a-delivery-that-fails), and never changes after.
 
@@ -156,7 +156,7 @@ Press Ctrl-C in the first terminal to stop.
 
 ## Run on a schedule
 
-A [`timer`](https://pyvvo.github.io/funcd/docs/develop/services/events/spec.md#eventsourcespectimer) event sets one schedule:
+A [`timer`](https://funcd.dev/docs/develop/services/events/spec.md#eventsourcespectimer) event sets one schedule:
 
 - `interval`, from 100 milliseconds to 24 hours, fires at each whole interval since the EventSource's creation, so its
   times survive a restart.
@@ -181,14 +181,14 @@ spec:
 
 A timer does not catch up a tick missed while funcd was stopped, and carries no data: pass values through the
 [action's input](#shape-the-input-of-an-action). A Sensor can also
-[start a Workflow run on a schedule](https://pyvvo.github.io/funcd/docs/develop/workloads/workflow.md#start-a-run-on-a-schedule).
+[start a Workflow run on a schedule](https://funcd.dev/docs/develop/workloads/workflow.md#start-a-run-on-a-schedule).
 
 ## React to a new object in a Bucket
 
-A [`blob`](https://pyvvo.github.io/funcd/docs/develop/services/events/spec.md#eventsourcespecblob) event fires once for each new object under its `prefix` in a
-[Bucket](https://pyvvo.github.io/funcd/docs/develop/services/bucket.md) of the namespace, and again when an object is written with another size or modification
+A [`blob`](https://funcd.dev/docs/develop/services/events/spec.md#eventsourcespecblob) event fires once for each new object under its `prefix` in a
+[Bucket](https://funcd.dev/docs/develop/services/bucket.md) of the namespace, and again when an object is written with another size or modification
 time; a deletion fires nothing. funcd lists each prefix every
-[`eventing.blobPollInterval`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), 15 seconds by default, so an event can lag
+[`eventing.blobPollInterval`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 15 seconds by default, so an event can lag
 that long. The data holds `bucket`, the full `key`, `size`, `version` and `time`. funcd records the keys that each event
 has fired for; when the EventSource is created or a prefix changes, the objects already there fire too, but only to the
 Sensors subscribed at that moment.
@@ -278,11 +278,11 @@ A `workflow` action succeeds once funcd creates the run; a later failure shows i
 
 ## React to a row change in a SQL database
 
-A [`sql`](https://pyvvo.github.io/funcd/docs/develop/services/events/spec.md#eventsourcespecsql) event fires on the changes that `on` lists, `Insert`, `Update` or `Delete`, all
+A [`sql`](https://funcd.dev/docs/develop/services/events/spec.md#eventsourcespecsql) event fires on the changes that `on` lists, `Insert`, `Update` or `Delete`, all
 three by default, to one `table` of a SQLDatabase of the namespace, matched exactly. The database's engine reports them
 to funcd: its **change feed**. The data holds `op`, `table`, `rowId`, `index`, the commit number that a commit's
 changes share, and `before`, `after` and `commitTimestamp` when the change carries them. Past 256 KiB together, funcd
-drops `before` and `after` and sets `truncated` to `true`. The [SQL](https://pyvvo.github.io/funcd/docs/develop/services/sql.md#python) page runs this Python
+drops `before` and `after` and sets `truncated` to `true`. The [SQL](https://funcd.dev/docs/develop/services/sql.md#python) page runs this Python
 example.
 
 ### Python
@@ -366,7 +366,7 @@ def handle(context: FunctionContext, event: CloudEvent[Change]) -> FuncOutput:
 
 ## Shape the input of an action
 
-An action without an [`input`](https://pyvvo.github.io/funcd/docs/develop/services/events/spec.md#sensorspecdo) passes the event's data as it is. An `input` replaces it with a
+An action without an [`input`](https://funcd.dev/docs/develop/services/events/spec.md#sensorspecdo) passes the event's data as it is. An `input` replaces it with a
 JSON object whose top-level values are literals, or strings that hold one expression between `${{` and `}}` reading
 `event.data` and its paths, `event.id`, `event.source`, `event.type` or `event.time`.
 
@@ -391,7 +391,7 @@ attempt counted as failed may still have done its work: make a repeat harmless, 
 
 A delivery that fails, such as when the Function answers with an error, is retried, 3 attempts by default, then kept
 as a **dead letter**, and its Invocation is `Failed`.
-[`funcdctl eventing dlq`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-eventing-dlq) lists, describes, replays or discards
+[`funcdctl eventing dlq`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-eventing-dlq) lists, describes, replays or discards
 dead letters.
 
 To see one, stop any running example, and replace `examples/log-burst/ticker.yaml` with this manifest, whose input the
@@ -464,7 +464,7 @@ command fails with `delivery failed (entry re-parked)`. `discard` deletes a dead
 
 ## Limits and quotas
 
-- funcd attempts each delivery [`eventing.deliveryAttempts`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml) times, 3 by
+- funcd attempts each delivery [`eventing.deliveryAttempts`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml) times, 3 by
   default, waiting `eventing.deliveryBackoffInitial`, 100 milliseconds by default, then twice as long each time, up to
   `eventing.deliveryBackoffMax`, by default the larger of 10 seconds and `eventing.deliveryBackoffInitial`.
 - An attempt waits up to `invoke.activationTimeout`, 30 seconds by default, for a worker, then up to 30 seconds for
@@ -500,7 +500,7 @@ the phase and the `Ready` condition; with `funcdctl dev`, add the first example'
 | Blob EventSource `SeenListSaved` condition `False` | `SaveFailed` | funcd cannot save the keys that one of its events has fired for. The message names each such event. |
 | Sensor `Ready` | `Bound` | The Sensor has subscribed to its events. |
 | Sensor `Pending` | `InvalidInput` | The input of an action is not valid, as [Shape the input of an action](#shape-the-input-of-an-action) explains, and the Sensor subscribes to nothing. The message names the action and the field, such as `action "burst" field "file": expr.check: unknown field "nope" under "event" (position 1)` for `${{ event.nope }}`. |
-| Sensor `Pending` | `TargetServesHTTP` | An action names a Function whose `protocol` is `http`, which only funcd's [edge](https://pyvvo.github.io/funcd/docs/platform/security-and-networking/networking.md), the part of funcd that receives the calls from outside funcd, calls. The Sensor stays subscribed, and each event of that action ends as a dead letter. |
+| Sensor `Pending` | `TargetServesHTTP` | An action names a Function whose `protocol` is `http`, which only funcd's [edge](https://funcd.dev/docs/platform/security-and-networking/networking.md), the part of funcd that receives the calls from outside funcd, calls. The Sensor stays subscribed, and each event of that action ends as a dead letter. |
 | Invocation `Ready` | | The action ended without an error. |
 | Invocation `Failed` | | The delivery ended as a dead letter: after its attempts, or at once when the retry queue refused it. The Invocation's `error` holds the reason, as the dead letter does. |
 | Any other reason | | The message of the `Ready` condition gives the cause. |
@@ -532,7 +532,7 @@ the phase and the `Ready` condition; with `funcdctl dev`, add the first example'
 `funcdctl dev` differs from a server:
 
 - It lists blob prefixes every second, or at `dev.platform.eventing.blobPollInterval` in
-  [`funcdctl.config.yaml`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev).
+  [`funcdctl.config.yaml`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev).
 - It applies EventSources and Sensors after the Functions and Workflows, applies a saved change within about a
   second, and gives the resource group `dev` to an object that names none; a server needs `metadata.resourceGroup`.
 - It keeps the event store in memory, even with `--persist`, which keeps only its other state, in `.funcd-dev`.

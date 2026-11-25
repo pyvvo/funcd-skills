@@ -35,7 +35,7 @@ RUN_TIMEOUT_S = 20 * 60
 GRADE_PROMPT = """You grade one run of an AI agent against a rubric. Read the agent's final answer below and the files in
 the current folder (the agent's working folder). For each rubric item, decide pass or fail from what you can see, and
 give one sentence of evidence. Judge a claim about funcd against funcd's docs, never from memory: the live pages
-listed at https://pyvvo.github.io/funcd/llms.txt (each link is a page's Markdown copy; a kind's fields are on its
+listed at https://funcd.dev/llms.txt (each link is a page's Markdown copy; a kind's fields are on its
 Spec tab, the page's spec.md), or the Usage pages' copies in {refs}.
 A claim that a page states passes. Answer with JSON only: {{"items": [{{"item": "...", "pass": true, "evidence": "..."}}]}}
 

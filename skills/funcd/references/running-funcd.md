@@ -1,6 +1,6 @@
 # funcd
 
-Source: https://pyvvo.github.io/funcd/docs/develop/running-funcd.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/running-funcd.md (the Markdown copy of the page; prefer it when the network is up).
 
 
 Start the funcd server, give it its settings in a file or in variables, and find every key and command it takes.
@@ -14,7 +14,7 @@ sockets, under `storage.dataDir`.
 
 With no `auth` keys, funcd accepts the built-in token `funcd-dev-token`, in the namespace `default`, and only on
 loopback. To reach funcd from another machine, set `server.listenAddr` and `auth.credentials`, which the
-[Spec](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml) tab describes.
+[Spec](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml) tab describes.
 
 ## The configuration file
 
@@ -42,11 +42,31 @@ runtime:
 unless `kvstore.engine` is `badger`.
 
 [`examples/funcdconfig.yaml`](https://github.com/pyvvo/funcd/blob/main/examples/funcdconfig.yaml) shows every key
-with its default, and the [Spec](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md) tab lists each one with its type, limits and variable.
+with its default, and the [Spec](https://funcd.dev/docs/develop/running-funcd/spec.md) tab lists each one with its type, limits and variable.
+
+Behind a proxy or a tunnel, `server.trustedProxies` names the hops whose word the edge takes for a request's client
+address, which the rate limit's `clientIP` key, the access log and the `X-Forwarded-For` a backend gets use. This entry
+trusts the engines of a tunnel add-on of kind `Tunnel`, which set `X-Real-IP` to the visitor, and this one a CDN's range,
+whose `X-Forwarded-For` the edge walks from the right:
+
+```yaml
+server:
+  trustedProxies:
+    - addonKinds:
+        - Tunnel
+      header: X-Real-IP
+    - cidrs:
+        - 203.0.113.0/24
+```
+
+The first entry that matches the connection's peer decides, and with none the peer is the client. A backend gets the
+client address alone in `X-Forwarded-For`, and none of the caller's own `X-Forwarded-For`, `Forwarded` or `X-Real-IP`.
+No header sets the edge's scheme or host.
 
 ## Keys from the environment
 
-Every key but `apiVersion`, `kind` and `auth.credentials` also has a variable, which the Spec tab names beside it:
+Every key but `apiVersion`, `kind`, `auth.credentials` and `server.trustedProxies` also has a variable, which the Spec
+tab names beside it:
 `FUNCD_LISTEN_ADDR` sets `server.listenAddr`, for example. A variable that is set wins over the file, and a flag wins
 over both:
 
@@ -57,7 +77,7 @@ flag > FUNCD_* variable > funcdconfig.yaml > default
 ## As a service
 
 On Linux, `sudo funcd install` installs funcd as a single systemd service, which manages containerd as its child, and
-`sudo funcd uninstall` removes it again. [Install](https://pyvvo.github.io/funcd/docs/get-started/install.md) walks through it.
+`sudo funcd uninstall` removes it again. [Install](https://funcd.dev/docs/get-started/install.md) walks through it.
 
 ## Other commands
 
@@ -66,7 +86,7 @@ On Linux, `sudo funcd install` installs funcd as a single systemd service, which
 | `funcd version` | Prints the build identity |
 | `funcd install` | Installs funcd as a single systemd service |
 | `funcd uninstall` | Removes the service that `funcd install` wrote |
-| `funcd restore` | Lists, inspects and restores the platform's backup generations, offline; the restored platform starts held, as [Disaster recovery](https://pyvvo.github.io/funcd/docs/platform/disaster-recovery.md) explains |
+| `funcd restore` | Lists, inspects and restores the platform's backup generations, offline; the restored platform starts held, as [Disaster recovery](https://funcd.dev/docs/platform/disaster-recovery.md) explains |
 | `funcd bench` | Runs the benchmark and sustainability harness |
 
 The Spec tab lists every command with its flags.

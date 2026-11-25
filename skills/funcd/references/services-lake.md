@@ -1,6 +1,6 @@
 # Lake
 
-Source: https://pyvvo.github.io/funcd/docs/develop/services/lake.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/services/lake.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -19,11 +19,11 @@ Declare a Lake over a Bucket prefix, bind it to a Function, and create and query
 
 ## Usage
 
-A [Lake](https://pyvvo.github.io/funcd/docs/platform/services/lake.md) is a SQL database whose data files funcd keeps in a Bucket. A Function
+A [Lake](https://funcd.dev/docs/platform/services/lake.md) is a SQL database whose data files funcd keeps in a Bucket. A Function
 that binds it creates and queries its tables with SQL through the Lake's gateway.
 
 The Python example lake-quack runs the SQL of each call on a Lake and returns the rows. Install Git, curl and the
-[dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), which includes the DuckDB engine that serves a Lake, and
+[dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), which includes the DuckDB engine that serves a Lake, and
 Python 3.12 or later as `python3`, with `venv`. The steps install the `duckdb` package from PyPI. Under `funcdctl dev`,
 the Lake's data is lost at stop, unless [`--persist`](#run-it-locally) keeps it.
 
@@ -53,7 +53,7 @@ engine's memory and is lost when it stops. Press Ctrl-C in the first terminal to
 
 The Lake, in `lake.yaml` ([complete file](https://github.com/pyvvo/funcd-python/blob/main/examples/lake-quack/lake.yaml)),
 declares the Bucket `lakehouse` by `name`, so funcd creates it and the Lake owns its prefix `gold`.
-[`spec.location`](https://pyvvo.github.io/funcd/docs/develop/services/lake/spec.md#lakespeclocation) names that prefix, which the Lake must bind and own. It also binds a
+[`spec.location`](https://funcd.dev/docs/develop/services/lake/spec.md#lakespeclocation) names that prefix, which the Lake must bind and own. It also binds a
 ConfigMap of engine settings and the Secret `lake-quack-token`, whose `QUACK_TOKEN` the engine needs on a platform; the
 gateway puts that token in place of an allowed caller's, so no caller holds it:
 
@@ -99,8 +99,8 @@ spec:
 
 The Function, in `consumer.yaml`
 ([complete file](https://github.com/pyvvo/funcd-python/blob/main/examples/lake-quack/consumer.yaml)), declares the Lake
-under [`spec.lakes`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspeclakes) and binds it under
-[`spec.bindings.lake`](https://pyvvo.github.io/funcd/docs/develop/workloads/function/spec.md#functionspecbindingslake); funcd starts its worker once the Lake
+under [`spec.lakes`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspeclakes) and binds it under
+[`spec.bindings.lake`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspecbindingslake); funcd starts its worker once the Lake
 is `Ready`:
 
 ```yaml
@@ -127,7 +127,7 @@ spec:
 ```
 
 The worker gets the gateway's address and a token of its own in `FUNCD_LAKE_<ALIAS>_URL` and
-`FUNCD_LAKE_<ALIAS>_TOKEN`, which [`context.lake.get("lake")`](https://pyvvo.github.io/funcd/docs/develop/services/lake/spec.md#handler-api) also returns. The handler sends the
+`FUNCD_LAKE_<ALIAS>_TOKEN`, which [`context.lake.get("lake")`](https://funcd.dev/docs/develop/services/lake/spec.md#handler-api) also returns. The handler sends the
 SQL through DuckDB's `quack` extension; on a platform the Function's bundle carries `duckdb` with it, and under
 `funcdctl dev` the virtual environment does. An excerpt of
 [`src/main.py`](https://github.com/pyvvo/funcd-python/blob/main/examples/lake-quack/src/main.py):
@@ -176,11 +176,11 @@ A statement that the engine rejects raises an error; uncaught, it fails the call
 - The gateway checks a caller when a session opens: it reads the caller's token, refuses another namespace, and asks
   Cedar for `lake::query`. It passes the session's later requests to the engine without a new check.
 - Cedar decides for the whole Lake: an allowed caller can run any statement, writes included.
-- A client outside funcd queries as an [Identity](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md#identityspec), with the
+- A client outside funcd queries as an [Identity](https://funcd.dev/docs/develop/security-and-networking/security/spec.md#identityspec), with the
   token in its Secret's `lakeToken`, through the edge at the address of
-  [`spec.ingress`](https://pyvvo.github.io/funcd/docs/develop/services/lake/spec.md#lakespecingress), `/lake/<name>` by default or `/` with a `host`, while `enabled` is `true`.
+  [`spec.ingress`](https://funcd.dev/docs/develop/services/lake/spec.md#lakespecingress), `/lake/<name>` by default or `/` with a `host`, while `enabled` is `true`.
   It needs a role:
-  [`Lake Query Reader`](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security/spec.md#rolesassignmentspecassignmentsroleref) or
+  [`Lake Query Reader`](https://funcd.dev/docs/develop/security-and-networking/security/spec.md#rolesassignmentspecassignmentsroleref) or
   `Lake Contributor`, scoped to a `Lake` or the `Namespace`. `Reader`, `Contributor` and `Owner` do not cover a Lake.
 
 ```yaml
@@ -204,7 +204,7 @@ spec:
 ```
 
 funcd applies the binding rule as a built-in policy in every namespace. An operator's
-[Policy](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/security.md#write-a-policy) can permit a caller, and its `forbid` denies
+[Policy](https://funcd.dev/docs/develop/security-and-networking/security.md#write-a-policy) can permit a caller, and its `forbid` denies
 even a bound one:
 
 ```cedar title="Built-in Lake policy"
@@ -224,9 +224,9 @@ funcd reads the Lake's Secrets as the Lake, so a Policy that forbids that read h
 
 - A Lake's files count toward the quota of its location's prefix and Bucket; a statement that needs a new file past it
   fails, while queries, drops and catalog saves go on.
-- The catalog grows up to [`lake.catalogMaxSize`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), 256 MiB by default or
+- The catalog grows up to [`lake.catalogMaxSize`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 256 MiB by default or
   `s3gateway.maxUploadBytes` if smaller; a save past it fails and sets `CatalogSaved` to `False`.
-- [`spec.resources`](https://pyvvo.github.io/funcd/docs/develop/services/lake/spec.md#lakespecresources) caps the engine's CPU and memory on containerd. A bound ConfigMap or
+- [`spec.resources`](https://funcd.dev/docs/develop/services/lake/spec.md#lakespecresources) caps the engine's CPU and memory on containerd. A bound ConfigMap or
   Secret sets `DUCKDB_MEMORY_LIMIT`, `DUCKDB_THREADS` and `DUCKDB_MAX_TEMP_DIRECTORY_SIZE`; the engine refuses any
   other `DUCKDB_` key.
 - On a platform, each engine gets a scratch area of `lake.scratchSize`, by default 1 GiB or twice
@@ -237,7 +237,7 @@ funcd reads the Lake's Secrets as the Lake, so a Policy that forbids that read h
 
 A Lake keeps its tables in Parquet files under its location's prefix, and its catalog in a DuckDB file of funcd's
 catalog store, outside every Bucket, where no listing shows it and no quota counts it. DuckLake keeps the rows of a
-small write in the catalog, as in the example. Both live in funcd's [blob store](https://pyvvo.github.io/funcd/docs/develop/services/bucket.md#data-storage), and
+small write in the catalog, as in the example. Both live in funcd's [blob store](https://funcd.dev/docs/develop/services/bucket.md#data-storage), and
 the engine reaches the files through the S3 gateway. A Lake located where an earlier one was, on a prefix that it owns,
 finds its files and catalog.
 
@@ -250,13 +250,14 @@ The engine saves its copy of the catalog to the store:
 
 While saves fail, the answers that wait for one fail, and so does each later request, until a save succeeds. A Backup
 copies a Lake, files and catalog together; a BackupSchedule names it under
-[`scope.lakes`](https://pyvvo.github.io/funcd/docs/develop/disaster-recovery/spec.md#backupschedulespecscope).
+[`scope.lakes`](https://funcd.dev/docs/develop/disaster-recovery/spec.md#backupschedulespecscope).
 
 ## Status
 
 `funcdctl get lake lake -n default -o json` and `funcdctl get function lake-reader -n default -o json` print the
 status; with `funcdctl dev`, add the `--server` and `--token` flags of its banner. While `Ready`, `status.endpoint`
-holds the gateway's address.
+holds the gateway's address. `funcdctl logs lake/lake -n default` prints what its engine wrote, an `EngineNotReady`'s
+cause among it.
 
 | Phase or condition | Reason | Meaning |
 | --- | --- | --- |
@@ -275,7 +276,7 @@ holds the gateway's address.
 | `CatalogSaved` condition | `Saved` or `SavesFailing` | On a platform, `True` with `Saved` after a save of the catalog, and `False` with `SavesFailing` while saves fail. It leaves the phase `Ready`. |
 | `IngressReady` condition | `Programmed`, `Disabled` or `LakeNotReady` | Only for a Lake that sets `spec.ingress`: `True` with `Programmed` once the edge serves the Lake, and `False` otherwise, such as with `Disabled` while `enabled` is not `true`, or `LakeNotReady` while the Lake is not `Ready`. |
 | Function `Pending` | `LakeNotReady` | A Lake that the Function binds is not `Ready`. The Function starts its worker once it is. |
-| Any other reason | | The message of the `Ready` condition gives the cause. See also the [Function's Status](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#status). |
+| Any other reason | | The message of the `Ready` condition gives the cause. See also the [Function's Status](https://funcd.dev/docs/develop/workloads/function.md#status). |
 
 ## Changes and deletion
 
@@ -316,7 +317,7 @@ from source without it leaves each Lake `Pending` with `LakeEngineNotBundled`. I
 - It applies none of the `DUCKDB_` keys.
 - It does not confine queries, which can reach the local computer's files, and runs with no sandbox or limits.
 
-The catalog is lost at stop. With [`--persist`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev), it is kept in
+The catalog is lost at stop. With [`--persist`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev), it is kept in
 `.funcd-dev/lake` and the files with the blob data, so the next run finds the tables.
 
 ## Examples

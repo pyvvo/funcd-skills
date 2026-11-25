@@ -1,6 +1,6 @@
 # Install
 
-Source: https://pyvvo.github.io/funcd/docs/get-started/install.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/get-started/install.md (the Markdown copy of the page; prefer it when the network is up).
 
 
 Install funcdctl on macOS or Linux, and the funcd server on Linux.
@@ -34,7 +34,7 @@ To install another release, set `FUNCDCTL_VERSION`:
 
 <!-- x-release-please-start-version -->
 ```sh
-curl -fsSL https://pyvvo.github.io/funcd/install.sh | FUNCDCTL_VERSION=v0.45.0 sh
+curl -fsSL https://pyvvo.github.io/funcd/install.sh | FUNCDCTL_VERSION=v0.48.0 sh
 ```
 <!-- x-release-please-end -->
 

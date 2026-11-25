@@ -1,6 +1,6 @@
 # App
 
-Source: https://pyvvo.github.io/funcd/docs/develop/workloads/app.md (the Markdown copy of the page; prefer it when the network is up).
+Source: https://funcd.dev/docs/develop/workloads/app.md (the Markdown copy of the page; prefer it when the network is up).
 
 ## Contents
 
@@ -8,6 +8,7 @@ Source: https://pyvvo.github.io/funcd/docs/develop/workloads/app.md (the Markdow
 - Change a value and roll out a new revision
 - Roll back to an earlier revision
 - Run hooks on each new revision
+- Carry an add-on
 - Limits and quotas
 - Status
 - Changes and deletion
@@ -20,15 +21,16 @@ Install an App from its template, read its status and its parts, change a value,
 
 ## Usage
 
-An [App](https://pyvvo.github.io/funcd/docs/platform/workloads/app.md) declares a whole app in one resource: its Functions, Routes, stores and
-other objects, which funcd writes as the App's **parts** and installs, upgrades, rolls back and deletes as one.
+An [App](https://funcd.dev/docs/platform/workloads/app.md) declares a whole app in one resource: its Functions, Routes, stores and
+other objects, which funcd writes as the App's **parts** and installs, upgrades, rolls back and deletes as one. A Job
+that an App declares is a part too, as [Jobs in an App](https://funcd.dev/docs/develop/workloads/app/jobs.md) shows.
 
 The volumes example installs from an **App template**: a folder with `app.yaml`, which names the App, its version, its
 images and the **values** that it takes, and a `resources` folder of spec sections. funcdctl renders the template with
-the values files that `-f` names; [`funcdctl app deploy`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-app-deploy) applies it
+the values files that `-f` names; [`funcdctl app deploy`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-app-deploy) applies it
 to a server, and `funcdctl dev` to a local platform, with each image's build from the `--build` folder.
 
-Install the [dev build of funcdctl](https://pyvvo.github.io/funcd/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`.
+Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git and curl, and put Node.js on the `PATH`.
 Start the example:
 
 ```console
@@ -56,11 +58,12 @@ valuesSchema:
       default: 30s
 ```
 
-A template folder holds only `app.yaml`, `app.lock` and `resources/*.yaml`; an `app.yaml` that names images sets their
+A template folder holds only `app.yaml`, `app.lock`, `addon.yaml` and `resources/*.yaml`
+([carry an add-on](#carry-an-add-on)); an `app.yaml` that names images sets their
 `registry`, which `funcdctl dev` replaces with its own. A part declares no store of its own: a `resources` file
 declares each KV store, Bucket, SQL database, Lake, ConfigMap and Secret at its top level, and the part binds it.
 funcdctl replaces each `${{ … }}` expression when it renders. `resources/files.yaml` declares two Functions, each with
-[`volumes`](https://pyvvo.github.io/funcd/docs/develop/workloads/app/spec.md#appspecfunctionsvolumes): `data`, a `local` volume that keeps its files through a crash, a new
+[`volumes`](https://funcd.dev/docs/develop/workloads/app/spec.md#appspecfunctionsvolumes): `data`, a `local` volume that keeps its files through a crash, a new
 revision and a scale to zero, and `scratch`, an `emptyDir` that each worker gets empty. A server accepts volumes only
 with `runtime.mode: containerd` and a `volumes.capacity`.
 
@@ -88,7 +91,7 @@ functions:
         size: 1Mi
 ```
 
-`resources/routes.yaml` gives each Function a [Route](https://pyvvo.github.io/funcd/docs/develop/security-and-networking/networking.md):
+`resources/routes.yaml` gives each Function a [Route](https://funcd.dev/docs/develop/security-and-networking/networking.md):
 
 ```yaml
 routes:
@@ -141,7 +144,7 @@ Each change of the spec, other than a pause or a resume, makes a new revision; t
 - `funcdctl dev` pushes every build itself, and renders and applies the App again when an input changes.
 - On a server, `funcdctl app deploy` renders each image with the digest that `app.lock` pins, or that the tag names at
   that deploy when the folder has no lock. A pushed template always holds a lock, so a new build reaches the App through
-  a new one, which [`funcdctl app lock`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-app-lock) writes. `funcdctl app deploy`
+  a new one, which [`funcdctl app lock`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-app-lock) writes. `funcdctl app deploy`
   exits with 1 when the new revision fails.
 
 Change `timeout` in `apps/volumes/values/redeploy.yaml` from `31s` to `45s` and save. `funcdctl dev` rolls out
@@ -154,7 +157,7 @@ REVISION   VERSION   PHASE   STAMPED
 2          1.0.0     Ready   2026-11-13T17:02:50.912Z
 ```
 
-Only `volumes-files` changed, so only it started a [new revision](https://pyvvo.github.io/funcd/docs/develop/workloads/function.md#changes-and-deletion). The note
+Only `volumes-files` changed, so only it started a [new revision](https://funcd.dev/docs/develop/workloads/function.md#changes-and-deletion). The note
 is still in its volume:
 
 ```console
@@ -164,7 +167,7 @@ $ curl -s -X POST -H 'content-type: application/json' -d '{"op":"read","name":"n
 
 ## Roll back to an earlier revision
 
-[`funcdctl app rollback <app> <number>`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-app-rollback) applies an earlier
+[`funcdctl app rollback <app> <number>`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-app-rollback) applies an earlier
 revision's spec as a new revision, so the history keeps every change. It restores the spec, not the data: stores and
 volumes keep what they hold, and a dropped store whose `deletion` is `delete` comes back empty. Only the current
 revision and the newest 10 others, `app.revisionHistory`, can be named. `--dry-run` prints the revision and each part
@@ -193,17 +196,18 @@ REVISION   VERSION   PHASE   STAMPED
 
 ## Run hooks on each new revision
 
-A **hook** is a Function of the App that funcd calls for each new revision: [`spec.hooks`](https://pyvvo.github.io/funcd/docs/develop/workloads/app/spec.md#appspechooks)
+A **hook** is a Function of the App that funcd calls for each new revision: [`spec.hooks`](https://funcd.dev/docs/develop/workloads/app/spec.md#appspechooks)
 lists `preApply` hooks, which run before the other parts change, such as a migration, and `postApply` hooks, once the
 revision is current. funcd calls each list in order, with a CloudEvent whose data is the
-[hook input](https://pyvvo.github.io/funcd/docs/develop/workloads/app/spec.md#apprevisionspechookinput): the event, `install`, `upgrade` or `rollback`, the App, and the current
-and new revisions with their versions.
+[hook input](https://funcd.dev/docs/develop/workloads/app/spec.md#apprevisionspechookinput): the event, `install`, `upgrade` or `rollback`, the App, the current
+and new revisions with their versions, and for an App with add-on parts, each part whose add-on revision the new
+revision changes ([carry an add-on](#carry-an-add-on)).
 
 - Until every pre-hook succeeds, funcd writes only the pre-hooks and what they bind, and the current revision keeps
   serving; a failed pre-hook fails the revision with `HookFailed`.
 - A failed post-hook makes the App `Degraded` with `HookFailed`, and holds the later post-hooks and the pruning.
-- [`funcdctl app retry <app>`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-app-retry) calls a failed hook again.
-- A call that ends during a stop, a pause or a [hold](https://pyvvo.github.io/funcd/docs/platform/disaster-recovery.md) is made again, so a hook
+- [`funcdctl app retry <app>`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-app-retry) calls a failed hook again.
+- A call that ends during a stop, a pause or a [hold](https://funcd.dev/docs/platform/disaster-recovery.md) is made again, so a hook
   must be safe to repeat.
 
 `funcdctl dev` calls hooks only with `--hooks`. The todo example's `resources/hooks.yaml`:
@@ -251,10 +255,38 @@ $ funcdctl --server http://127.0.0.1:8081 --token funcd-dev-token get apprevisio
 
 Keep the example running: [Changes and deletion](#changes-and-deletion) deletes it.
 
+## Carry an add-on
+
+A template may carry the [add-on](https://funcd.dev/docs/develop/services/addons.md) whose objects its App holds: `addon.yaml` beside
+`app.yaml` holds one Addon, with no namespace, and the App's `addons` section declares the objects of its kind, as `kv`
+declares a KV store: each entry has a `name`, the add-on's `kind` and the object's `config`, `bindings`, `ingress`,
+`resources` and `deletion`, or a `ref` alone.
+
+`funcdctl app deploy` applies the Addon before the App. An admin's deploy finds the Addon of the template's kind under
+any name: it creates the template's when there is none (`created Addon/rauthy`), updates one whose spec differs under
+its own name (`updated Addon/<name>`), and leaves one that agrees (`unchanged Addon/<name>`). A developer may not read
+an Addon, so a developer's deploy only checks that the kind is served in the namespace; when it is not, it applies
+nothing and exits 1: `Addon rauthy is not registered: an admin deploys this template first`. `funcdctl app render`
+prints the App alone, and the Addon's `${{ }}` are its own, never the template's values. `funcdctl dev` applies
+`addon.yaml` with its admin token before the App, again when the file changes, and deletes the Addon once the file
+goes.
+
+Each change of an Addon is a revision, `rauthy-1` then `rauthy-2`, and a newer one moves no engine. An App's revision
+records the revision of each add-on kind of its parts, and a part moves to that record once the App's revision is
+applied, so the pre-hooks run against the old engine and the post-hooks against the new one; the hook input's
+`addonRevisions` names each part's move. A rollback takes back the records of the revision it rolls back to, so the
+part returns to the older engine. A part only moves forward: a revision that fails does not move it back.
+
+An `addons` part is admitted against its Addon: a kind no Addon registers, a config that breaks the Addon's schema, or
+a Secret that the App's `secrets` do not declare is refused with 400 naming the entry. The part is Ready once its
+engine is, `status.children` names it under its add-on's kind (`IdentityProvider/web-auth-login`), a revision that drops
+it deletes it and its engine, and its storage follows its own `deletion`. Deleting the App deletes its parts; the
+Addon stays until an admin deletes it.
+
 ## Limits and quotas
 
 - An App's name, and the name of a ConfigMap that it defines, hold at most 52 characters.
-- A new revision has [`app.upgradeTimeout`](https://pyvvo.github.io/funcd/docs/develop/running-funcd/spec.md#funcdconfigyaml), 5 minutes by default or
+- A new revision has [`app.upgradeTimeout`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 5 minutes by default or
   twice `runtime.bootTimeout` if longer, from its start, a resume, a hold's release or its last pre-hook, to become
   current; past it, it turns `Failed`, unless a pre-hook still runs.
 - A hook call fails when no answer starts within its Function's `timeout`, else `invoke.defaultTimeout`, 60 seconds by
@@ -278,15 +310,19 @@ stops writing parts, `Ready` has the stop's reason in any phase.
 | `Failed` | `ChildNotReady` | A part was still pending when `app.upgradeTimeout` ran out. The revision stays `Failed`, and `Ready` stays `False`, even once its parts are ready: apply a new spec, such as a fix or a rollback. |
 | `Ready` condition | `ChildNotOwned` | An object of a part's name exists, and the App does not own it, such as a store that a deleted App kept. funcd writes no part until the object is gone, or until the App names it with `ref`. |
 | `Ready` condition | `ChildInvalid` | funcd refused the write of a part, and writes no part after it. The message holds the refusal. |
-| `Ready` condition | `SecretNotFound` or `SecretKeyMissing` | A Secret that the App declares, or one of its keys, does not exist. funcd writes no part until it exists. |
+| `Ready` condition | `SecretNotFound` or `SecretKeyMissing` | A Secret that the App declares, or one of its keys, does not exist. funcd writes no part until it exists. A key of a Secret that one of the App's Jobs owns stops nothing: the parts that read it are `Lagging` until the Job writes it. |
 | `Ready` condition | `RequirementNotMet` | An App that `spec.requires` names does not exist, is not `Ready`, or has a version out of the range. |
 | `Ready` condition | `RefNotFound` | The object that a `ref` entry names does not exist. |
 | `Paused` condition | `SpecPaused` | The App is paused, as [Changes and deletion](#changes-and-deletion) explains. |
 | Another reason | | The message of the `Ready` condition gives the cause. |
 
 `status.currentRevision` names the revision whose rollout last completed, and `status.latestRevision` the newest.
-`status.children` lists each part, in write order, as `Ready`, `NotStarted`, `Pending` with a reason, or `Pruning`.
-[`funcdctl app history`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-app-history) lists the revisions: `Deploying` until
+`status.children` lists each part, in write order, as `Ready`, `NotStarted`, `Pending` with a reason, `Lagging` with a
+reason, or `Pruning`. A `Lagging` part waits for what funcd does not run: a stack that is not applied, such as one whose
+change waits for approval (`AwaitingApproval`), or a part that reads a key its stack's Job has not written yet
+(`SecretKeyMissing: Secret/<name> <key>`), which funcd writes once the key exists. The App's `Ready`, the switch to a new
+revision and its deadline leave a `Lagging` part out.
+[`funcdctl app history`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-app-history) lists the revisions: `Deploying` until
 current, then `Ready`, or `Failed`. `funcdctl get apprevision <name> -n <namespace> -o json` prints a revision's
 conditions:
 
@@ -308,10 +344,11 @@ A new revision rolls out in this order:
 
 1. It waits for the Apps that `spec.requires` names, writing nothing.
 2. It calls the pre-hooks.
-3. It writes the parts in the order of `status.children`: ConfigMaps, KV stores, Buckets, SQL databases, Functions,
-   Workflows, EventSources, Sensors, Routes, Sites, Lakes and BackupSchedules. An unchanged part stays as it is.
-4. Once no part is pending, it becomes current, and funcd calls the post-hooks.
-5. Then funcd deletes the dropped parts, `Pruning` until then: a dropped store whose `deletion` is `delete` goes with
+3. It writes the parts in the order of `status.children`: ConfigMaps, KV stores, Buckets, SQL databases, add-on
+   objects, Functions, Jobs, Workflows, EventSources, Sensors, Routes, Sites, Lakes and BackupSchedules. An unchanged
+   part stays as it is.
+4. Once no part is pending, it becomes current, and funcd calls the post-hooks, once no part is `Lagging` or pending.
+5. Then funcd deletes the dropped parts, `Pruning` until then and while a part is `Lagging`: a dropped store whose `deletion` is `delete` goes with
    its data, and one with `retain`, the default, stays. A part still in use by a Workflow run or another object stays.
 
 A failed revision leaves `currentRevision` on the one before, but the parts that it wrote keep the new spec. It stays
@@ -319,17 +356,17 @@ A failed revision leaves `currentRevision` on the one before, but the parts that
 ConfigMap gets a new name. funcd writes back a part that another writer changes or deletes, and
 `status.lastSelfHeal` names the last one.
 
-[`funcdctl app pause`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-app-pause) stops revisions, writes and hooks until
-[`funcdctl app resume`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-app-resume); `deploy` and `rollback` keep the pause, but
-`funcdctl apply` of an App manifest without `paused`, such as the [Spec](https://pyvvo.github.io/funcd/docs/develop/workloads/app/spec.md#app) tab's example, resumes it.
+[`funcdctl app pause`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-app-pause) stops revisions, writes and hooks until
+[`funcdctl app resume`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-app-resume); `deploy` and `rollback` keep the pause, but
+`funcdctl apply` of an App manifest without `paused`, such as the [Spec](https://funcd.dev/docs/develop/workloads/app/spec.md#app) tab's example, resumes it.
 
-[`funcdctl app delete <app>`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-app-delete) deletes the App and waits until its
+[`funcdctl app delete <app>`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-app-delete) deletes the App and waits until its
 parts, revisions and the objects that they own are gone:
 
 - A KV store, Bucket or SQL database goes with its data when its `deletion` is `delete`, and stays when it is `retain`.
 - A Lake always goes, but its files stay when its Bucket stays.
 - A `local` volume whose `deletion` is `retain` stays with its files, without a printed line, until
-  [`funcdctl volume delete`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-volume-delete) or a Function of the same name takes
+  [`funcdctl volume delete`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-volume-delete) or a Function of the same name takes
   it back with `ref`.
 - Objects named with `ref`, Secrets and Backups stay.
 
@@ -403,7 +440,7 @@ nothing. `funcdctl dev` also stops at its start, before it serves the App, on it
 - It drops the hooks unless `--hooks` is set. Function parts keep their own `replicas`, so a broken build shows at the
   part's first call, with 503.
 - It creates each declared Secret, unless an `--apply` file defines it, from the environment, then the `envFile` or
-  `env` of [`funcdctl.config.yaml`](https://pyvvo.github.io/funcd/docs/develop/tools/funcdctl/spec.md#funcdctl-dev). `--apply` names resources, such as
+  `env` of [`funcdctl.config.yaml`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-dev). `--apply` names resources, such as
   RolesAssignments, that it applies beside the App.
 - It renders and applies again within about a second after an input changes, and prints `reloaded in <duration>`; a
   failed reload keeps the last App running.
