@@ -43,10 +43,10 @@ Ask with the question tool when there is one, each question with a recommended a
 ## 3. Write the manifests
 
 - **The story's order:** a `text` card with the goal and the scenario; a `list` card of why, 4 or 5 points of what the
-  feature saves; a `list` card of the tools, each with what it does; a `contents` card; a Blueprint of the files that
-  the developer writes; then the chapters; a `tree` card of what a command generates, where one does; a recap card.
+  feature saves; a `list` card of the tools, each with what it does; a `contents` card; a `tree` card of the files
+  that the developer writes, drawn from their Files; then the chapters; a `tree` card of what a command generates, where one does; a recap card.
 - **Files first:** one for each file that a step opens, types or uploads, with its path in the project and a comment of
-  a few words, which the Blueprint shows. A file typed in two chapters gets `parts`, split at its own lines.
+  a few words, which a tree card shows. A file typed in two chapters gets `parts`, split at its own lines.
 - **A chapter** shows its file in the editor first, then the same layer where it shows its result: a site or the
   terminal. One idea per caption. On a page, `fill`, `press` and `click` act as a person would: read the page's code
   for the names that its fields and buttons show.

@@ -7,7 +7,7 @@ import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   type CardType,
   type IChapterTitle,
-  blueprintTree,
+  treeOfFiles,
   layouts
 } from './slides.ts';
 
@@ -50,7 +50,7 @@ export interface IStep {
   text?: string;
   timeout?: number;
   speed?: number;
-  // a Card or a Blueprint, by its name
+  // a Card, by its name
   card?: string;
   hold?: number;
 }
@@ -118,7 +118,7 @@ export interface IDemo {
   opening: CardType[];
   chapters: IChapter[];
   recap?: CardType;
-  // the Cards and the Blueprints, by name
+  // the Cards, by name
   cards: Record<string, CardType>;
   files: Record<string, IFile>;
   // what each typed File holds in the workspace when the journey starts, by its path: the text before its first typed
@@ -172,9 +172,10 @@ const kinds: Record<string, string[]> = {
     'items',
     'footer',
     'tree',
+    'files',
+    'root',
     'compact'
   ],
-  Blueprint: ['kicker', 'title', 'seconds', 'compact', 'root', 'files'],
   File: ['path', 'source', 'comment', 'parts'],
   Steps: ['params', 'steps'],
   Chapter: ['title', 'detail', 'cardSeconds', 'steps']
@@ -374,7 +375,7 @@ export const loadDemo = (folderArg: string): IDemo => {
   if (docs.filter(isDemo).length > 1)
     problems.push(`${demoLabel}: an included file holds another Demo`);
 
-  // Each manifest by its kind and its name; a Blueprint is named as a Card is, since both are shown as cards
+  // Each manifest by its kind and its name
   const named = new Map<string, Map<string, IDoc>>();
   const ofKind = (kind: string) => [...(named.get(kind)?.values() ?? [])];
   for (const doc of docs) {
@@ -403,9 +404,8 @@ export const loadDemo = (folderArg: string): IDemo => {
         );
       }
     }
-    const space = kind === 'Blueprint' ? 'Card' : kind;
-    const byName = named.get(space) ?? new Map<string, IDoc>();
-    named.set(space, byName);
+    const byName = named.get(kind) ?? new Map<string, IDoc>();
+    named.set(kind, byName);
     const other = byName.get(name);
     if (other) {
       problems.push(
@@ -626,8 +626,23 @@ export const loadDemo = (folderArg: string): IDemo => {
     }
   }
 
-  // The Cards, then the Blueprints, drawn from their Files
+  // The Cards: a tree card's tree is written, or drawn from Files, their paths and comments
   const cards: Record<string, CardType> = {};
+  const cardKeys = [
+    'paragraphs',
+    'items',
+    'footer',
+    'tree',
+    'files',
+    'root',
+    'compact'
+  ];
+  const keysOf: Record<string, string[]> = {
+    text: ['paragraphs'],
+    list: ['items', 'footer'],
+    contents: [],
+    tree: ['tree', 'files', 'root', 'compact']
+  };
   for (const doc of ofKind('Card')) {
     const value = doc.value;
     const where = label(doc);
@@ -638,12 +653,48 @@ export const loadDemo = (folderArg: string): IDemo => {
       problems.push(`${where}: seconds is how long it shows`);
     if (value.compact !== undefined && typeof value.compact !== 'boolean')
       problems.push(`${where}: compact is true or false`);
+    const layout = value.layout;
+    if (typeof layout !== 'string' || !layouts.includes(layout)) {
+      problems.push(
+        `${where}: layout is ${layouts.join(', ')}, not ${String(layout)}`
+      );
+      continue;
+    }
+    for (const key of cardKeys) {
+      if (value[key] !== undefined && !keysOf[layout].includes(key))
+        problems.push(`${where}: a ${layout} card takes no ${key}`);
+    }
+    const isTexts = (key: string) =>
+      Array.isArray(value[key]) &&
+      (value[key] as unknown[]).length > 0 &&
+      (value[key] as unknown[]).every(isText);
+    if (layout === 'text' && !isTexts('paragraphs'))
+      problems.push(`${where}: a text card needs paragraphs`);
+    if (layout === 'list' && !isTexts('items'))
+      problems.push(`${where}: a list card needs items`);
+    if (
+      layout === 'list' &&
+      value.footer !== undefined &&
+      !isText(value.footer)
+    )
+      problems.push(`${where}: footer is a text`);
+    if (
+      layout === 'tree' &&
+      (value.tree === undefined) === (value.files === undefined)
+    )
+      problems.push(
+        `${where}: a tree card takes tree, written, or files, drawn from Files`
+      );
+    if (layout === 'tree' && value.tree !== undefined && !isText(value.tree))
+      problems.push(`${where}: tree is a folder's tree`);
+    if (value.root !== undefined && value.files === undefined)
+      problems.push(`${where}: root goes with files`);
     const base = {
       kicker: String(value.kicker),
       title: String(value.title),
       ...(value.seconds === undefined ? {} : { seconds: Number(value.seconds) })
     };
-    if (value.kind === 'Blueprint') {
+    if (layout === 'tree' && value.files !== undefined) {
       const names = Array.isArray(value.files) ? value.files : [];
       if (!names.length)
         problems.push(`${where}: files lists the Files that its tree shows`);
@@ -664,57 +715,25 @@ export const loadDemo = (folderArg: string): IDemo => {
         problems.push(
           `${where}: root is a folder's path from the project's root`
         );
-      const entries = shown.map((file) => ({
-        path: top === '' ? file.path : file.path.slice(top.length + 1),
-        comment: file.comment
-      }));
       for (const file of shown) {
         if (top !== '' && !file.path.startsWith(`${top}/`))
           problems.push(`${where}: File ${file.name} is not in ${top}`);
       }
+      const entries = shown.map((file) => ({
+        path: top === '' ? file.path : file.path.slice(top.length + 1),
+        comment: file.comment
+      }));
       cards[name] = {
         layout: 'tree',
         ...base,
-        tree: blueprintTree(top, entries),
+        tree: treeOfFiles(top, entries),
         ...(value.compact === true ? { compact: true } : {})
       };
       continue;
     }
-    const layout = value.layout;
-    if (typeof layout !== 'string' || !layouts.includes(layout)) {
-      problems.push(
-        `${where}: layout is ${layouts.join(', ')}, not ${String(layout)}`
-      );
-      continue;
-    }
-    const isTexts = (key: string) =>
-      Array.isArray(value[key]) &&
-      (value[key] as unknown[]).length > 0 &&
-      (value[key] as unknown[]).every(isText);
-    const keysOf: Record<string, string[]> = {
-      text: ['paragraphs'],
-      list: ['items', 'footer'],
-      contents: [],
-      tree: ['tree', 'compact']
-    };
-    for (const key of ['paragraphs', 'items', 'footer', 'tree', 'compact']) {
-      if (value[key] !== undefined && !keysOf[layout].includes(key))
-        problems.push(`${where}: a ${layout} card takes no ${key}`);
-    }
-    if (layout === 'text' && !isTexts('paragraphs'))
-      problems.push(`${where}: a text card needs paragraphs`);
-    if (layout === 'list' && !isTexts('items'))
-      problems.push(`${where}: a list card needs items`);
-    if (
-      layout === 'list' &&
-      value.footer !== undefined &&
-      !isText(value.footer)
-    )
-      problems.push(`${where}: footer is a text`);
-    if (layout === 'tree' && !isText(value.tree))
-      problems.push(`${where}: a tree card needs tree`);
     const extra = Object.fromEntries(
       keysOf[layout]
+        .filter((key) => key !== 'files' && key !== 'root')
         .filter((key) => value[key] !== undefined)
         .map((key) => [key, value[key]])
     );
@@ -848,7 +867,7 @@ export const loadDemo = (folderArg: string): IDemo => {
   // The Demo's cards and chapters, by name
   const cardOf = (name: unknown, where: string) => {
     const card = typeof name === 'string' ? cards[name] : undefined;
-    if (!card) problems.push(`${where}: no Card or Blueprint ${String(name)}`);
+    if (!card) problems.push(`${where}: no Card ${String(name)}`);
     return card;
   };
   if (!isText(demo.title))

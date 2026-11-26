@@ -45,7 +45,7 @@ export interface IChapterTitle {
   detail: string;
 }
 
-// A file of a blueprint's tree: its path under the tree's root, and the comment above it.
+// A file of a tree drawn from Files: its path under the tree's root, and the comment above it.
 export interface ITreeEntry {
   path: string;
   comment?: string;
@@ -57,9 +57,9 @@ interface INode {
   children: INode[];
 }
 
-// A blueprint's tree: the root, then its files in the order given, each folder listed where its first file is, and a
+// A tree drawn from Files: the root, then its files in the order given, each folder listed where its first file is, and a
 // comment line above each file that has one.
-export const blueprintTree = (root: string, entries: ITreeEntry[]) => {
+export const treeOfFiles = (root: string, entries: ITreeEntry[]) => {
   const top: INode = { name: root, children: [] };
   for (const { path, comment } of entries) {
     let node = top;

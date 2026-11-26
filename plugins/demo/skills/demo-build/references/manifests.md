@@ -13,7 +13,6 @@ work.
 - Environment
 - File
 - Card
-- Blueprint
 - Chapter
 - Steps
 - The steps' actions
@@ -28,7 +27,7 @@ docs/demo/
 └── <demo>/
     ├── demo.yaml           # the Demo: its Environment, its cards and chapters in order
     ├── cards.yaml          # the Cards, separated by ---
-    ├── files.yaml          # the Files, and the Blueprint drawn from them
+    ├── files.yaml          # the Files, and the tree card drawn from them
     ├── steps.yaml          # the Steps that its chapters repeat
     ├── 1-<chapter>.yaml    # one Chapter a file
     ├── 2-<chapter>.yaml
@@ -45,7 +44,7 @@ in subfolders, which the engine does not read: a sample, or the files that the d
 - **Paths** start at the project's root, the git checkout that holds the demo's folder. The workspace is a copy of the
   project, so a path names the same file in both.
 - **Names** are lowercase words joined by hyphens, and unique in each kind. A step names a File, a Card or a Steps by
-  its name, never by a path. Cards and Blueprints share their names, as both show as cards.
+  its name, never by a path.
 - **YAML** is written in block style. Quote a text that holds `: `, or starts with `` ` ``, `*`, `{` or `$`.
 - **Variables:** `${NAME}` in an Environment's `workspace` and `editor.env` is a variable of the engine's environment;
   `TMPDIR` defaults to the system's temp folder, and `editor.env` also takes `DEMO_WORKSPACE`, `DEMO_PROJECT` and
@@ -62,7 +61,7 @@ in subfolders, which the engine does not read: a sample, or the files that the d
 | `setup`       | Its own command, after the Environment's `setup` and before its `start`: what the workspace needs for this demo. |
 | `teardown`    | Its own command, before the Environment's `teardown`.                                                            |
 | `terminal`    | `cwd`, the folder where the journey types its commands, and `prompt`, the name that the prompt shows.            |
-| `opening`     | The cards before the first chapter, in order: Card and Blueprint names.                                          |
+| `opening`     | The Cards before the first chapter, in order.                                                                    |
 | `chapters`    | The Chapters, in order.                                                                                          |
 | `recap`       | The card that ends the video. Optional.                                                                          |
 
@@ -97,13 +96,13 @@ Where a demo plays: the workspace, the services that the sites serve, and the ed
 
 ## File
 
-A file of the project that a step opens, types or uploads, or that a Blueprint shows.
+A file of the project that a step opens, types or uploads, or that a tree card shows.
 
 | Key       | What it holds                                                                                                     |
 | --------- | ----------------------------------------------------------------------------------------------------------------- |
 | `path`    | Its path from the project's root, which is also its path in the workspace.                                        |
 | `source`  | The file whose text `type` types, when it is not the project's own file at `path`.                                |
-| `comment` | What the file is, in a few words: the line above it in a Blueprint.                                               |
+| `comment` | What the file is, in a few words: the line above it in a tree card.                                               |
 | `parts`   | Named parts, for a file typed a part at a time: `from`, its first line, and `until`, the line after its last one. |
 
 - `from` and `until` are whole lines of the file; a part without `from` starts at the first line, without `until` it
@@ -118,27 +117,23 @@ A file of the project that a step opens, types or uploads, or that a Blueprint s
 
 ## Card
 
-| Key               | What it holds                                                                                             |
-| ----------------- | --------------------------------------------------------------------------------------------------------- |
-| `layout`          | `text`, `list`, `contents` or `tree`.                                                                     |
-| `kicker`, `title` | The small line above the title, and the title.                                                            |
-| `seconds`         | How long it shows: 8 in the opening, 6 for a `card` step and 9 for the recap, by default.                 |
-| `paragraphs`      | A text card's paragraphs: the goal and the scenario, under a large title.                                 |
-| `items`, `footer` | A list card's items, and a line under them.                                                               |
-| `tree`, `compact` | A tree card's folder tree, with a comment above a file on a line `│ # …`; `compact: true` for a long one. |
+| Key               | What it holds                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `layout`          | `text`, `list`, `contents` or `tree`.                                                        |
+| `kicker`, `title` | The small line above the title, and the title.                                               |
+| `seconds`         | How long it shows: 8 in the opening, 6 for a `card` step and 9 for the recap, by default.    |
+| `paragraphs`      | A text card's paragraphs: the goal and the scenario, under a large title.                    |
+| `items`, `footer` | A list card's items, and a line under them.                                                  |
+| `tree`            | A tree card's folder tree, written, with a comment above a file on a line `│ # …`.           |
+| `files`, `root`   | In place of `tree`: Files, drawn as a tree from their paths, each with its comment above it. |
+| `compact`         | `true` for a long tree, in smaller type.                                                     |
 
-A contents card lists the chapters' titles and details, numbered. A card's text takes two marks, `**bold**` and
-`` `code` ``. Cards with no step between them fade into each other, as the opening's do with the first chapter's.
-
-## Blueprint
-
-A card of the files that the developer writes, drawn as a tree from Files.
-
-| Key                                     | What it holds                                                         |
-| --------------------------------------- | --------------------------------------------------------------------- |
-| `kicker`, `title`, `seconds`, `compact` | As a Card's.                                                          |
-| `files`                                 | Files, in the order the tree lists them, each with its comment above. |
-| `root`                                  | The folder at the tree's top: by default, the folder that holds them. |
+- A contents card lists the chapters' titles and details, numbered.
+- A tree drawn from `files` is a blueprint: the files that the developer writes, which the steps open or type. `root`
+  is the folder at its top, by default the one that holds them all. A written `tree` shows what is not a File, such as
+  what a command generates.
+- A card's text takes two marks, `**bold**` and `` `code` ``. Cards with no step between them fade into each other, as
+  the opening's do with the first chapter's.
 
 ## Chapter
 
@@ -195,7 +190,7 @@ A step is one action, named by its first key, and `hold`, the seconds to wait af
 | `fill`     | Types `value` into the field of a page with that label or placeholder, in place of its text, as a person would.          |
 | `press`    | Presses a key where the keyboard is: `Enter` after a `fill`, `Escape`, or a combination, as `ControlOrMeta+a`.           |
 | `wait`     | Waits, its value naming what for, on one of `url`, `file` and `text`, below.                                             |
-| `card`     | Shows a Card or a Blueprint; its `seconds` say how long, so it takes no `hold`.                                          |
+| `card`     | Shows a Card; its `seconds` say how long, so it takes no `hold`.                                                         |
 | `use`      | Plays a Steps, with `with`.                                                                                              |
 
 - `wait` with `url`: the URL answers 200, with `method` and `body`, and `until`, a JavaScript expression of `it`, the
