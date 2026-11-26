@@ -1,0 +1,17 @@
+{
+  "name": "demo",
+  "description": "Plan a demo video of a project's feature with the user, then record it from a folder of YAML manifests, in VS Code for the web and the project's pages, with Playwright.",
+  "version": "0.1.0",
+  "author": {
+    "name": "The funcd Authors"
+  },
+  "homepage": "https://github.com/pyvvo/funcd-skills",
+  "repository": "https://github.com/pyvvo/funcd-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "demo",
+    "video",
+    "screencast",
+    "playwright"
+  ]
+}
