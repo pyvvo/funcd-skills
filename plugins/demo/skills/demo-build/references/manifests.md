@@ -110,6 +110,9 @@ A file of the project that a step opens, types or uploads, or that a Blueprint s
   ends with the file.
 - `source` serves a demo whose setup adds a feature that the project lacks yet; once the project has it, the File
   drops `source`.
+- A `path` whose name holds `*`, as `docs/demo/x/1-*.yaml`, names a file that the journey writes under a name of its
+  own: `open`, `upload` and `wait` take the first file of its folder that matches, in their names' order. A typed File
+  has its whole name.
 - A typed File's text is read from the project. Before the journey, the engine leaves in the workspace only what comes
   before its first typed part: no file, or the lines before it. Each part then starts where the one before it ended.
 
@@ -188,6 +191,9 @@ A step is one action, named by its first key, and `hold`, the seconds to wait af
 | `scrollTo` | Scrolls a web page until that text is near its top.                                                                      |
 | `pick`     | Opens a field by its label and picks its `option`.                                                                       |
 | `upload`   | Clicks a button by its name, and gives it a File: `file`.                                                                |
+| `click`    | Clicks the element of a page with that name: a button, a link, a tab or a box to tick, else that exact text.             |
+| `fill`     | Types `value` into the field of a page with that label or placeholder, in place of its text, as a person would.          |
+| `press`    | Presses a key where the keyboard is: `Enter` after a `fill`, `Escape`, or a combination, as `ControlOrMeta+a`.           |
 | `wait`     | Waits, its value naming what for, on one of `url`, `file` and `text`, below.                                             |
 | `card`     | Shows a Card or a Blueprint; its `seconds` say how long, so it takes no `hold`.                                          |
 | `use`      | Plays a Steps, with `with`.                                                                                              |
@@ -196,6 +202,8 @@ A step is one action, named by its first key, and `hold`, the seconds to wait af
   answer's JSON. With `file`: a File exists in the workspace. With `text`: the page shows that text. `timeout` is 120
   seconds by default, and the wait plays `speed` times faster in the video, 8 by default.
 - `shows`, `text` and `scrollTo` match a whole text, exactly.
+- `click`, `fill`, `pick` and `upload` name an element as the page names it for a person: a button's text, a
+  field's label.
 - `type` hides the terminal while it types, then saves once, as a watcher may act on each save. It types the text one
   character at a time, with no auto-indent and no suggestions.
 - An action in the editor brings it back first when a site shows; its reload plays fast in the video.

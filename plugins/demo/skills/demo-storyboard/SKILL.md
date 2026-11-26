@@ -48,7 +48,8 @@ Ask with the question tool when there is one, each question with a recommended a
 - **Files first:** one for each file that a step opens, types or uploads, with its path in the project and a comment of
   a few words, which the Blueprint shows. A file typed in two chapters gets `parts`, split at its own lines.
 - **A chapter** shows its file in the editor first, then the same layer where it shows its result: a site or the
-  terminal. One idea per caption.
+  terminal. One idea per caption. On a page, `fill`, `press` and `click` act as a person would: read the page's code
+  for the names that its fields and buttons show.
 - **Captions:** one short sentence, 80 characters at most, so that it fits the corner in two lines; `detail` names the
   file or the command. Hold a caption 4 to 7 seconds when the viewer reads it, 2 to 3 between actions.
 - **Waits:** a `wait` on what the project does (an answer, a file, a text), never a long `hold`; a slow command, as a

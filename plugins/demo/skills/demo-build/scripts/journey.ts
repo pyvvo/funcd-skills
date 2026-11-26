@@ -1,7 +1,13 @@
 // Plays a demo (references/manifests.md) in one browser page, which Playwright records as one video: the opening
 // cards, then each chapter, opened by its card, step by step through VS Code for the web and the project's sites,
 // then the recap card. `demo up` starts everything that it uses.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync
+} from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
 import type { Locator, Page } from 'playwright';
@@ -141,7 +147,8 @@ const keepsTerminal = new Set([
   'caption',
   'hold',
   'wait',
-  'card'
+  'card',
+  'press'
 ]);
 
 // Plays the demo into `out`: Playwright's recording and journey.json, or failed.png when a step fails. `last` is the
@@ -190,8 +197,34 @@ export const playJourney = async (
       : url;
   };
 
+  // The files of the workspace that a File's path names: itself, or for a name with `*`, as a file that the journey
+  // writes under a name of its own, those of its folder that match, in their names' order
+  const matches = (file: IFile) => {
+    if (!file.path.includes('*')) {
+      return existsSync(join(workspace, file.path)) ? [file.path] : [];
+    }
+    const folder = dirname(file.path);
+    const name = new RegExp(
+      `^${basename(file.path)
+        .split('*')
+        .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*')}$`
+    );
+    if (!existsSync(join(workspace, folder))) return [];
+    return readdirSync(join(workspace, folder))
+      .filter((each) => name.test(each))
+      .sort()
+      .map((each) => join(folder, each));
+  };
+  const pathOf = (file: IFile) => {
+    if (!file.path.includes('*')) return file.path;
+    const [first] = matches(file);
+    if (!first) throw new Error(`no file ${file.path} in the workspace`);
+    return first;
+  };
+
   // A file of the workspace
-  const inWorkspace = (file: IFile) => join(workspace, file.path);
+  const inWorkspace = (file: IFile) => join(workspace, pathOf(file));
 
   // Waits until `ready` answers true, at most `timeout` ms; the wait plays `speed` times faster in the video.
   const waitFor = async (
@@ -476,15 +509,16 @@ export const playJourney = async (
 
   // Opens a File from the Explorer, then waits for its tab.
   const openFile = async (page: Page, file: IFile) => {
-    const row = await explorerRow(page, file.path);
+    const path = pathOf(file);
+    const row = await explorerRow(page, path);
     await click(page, rowLocator(page, row));
     await page
       .getByRole('tab', {
-        name: new RegExp(basename(file.path).replace(/\./g, '\\.'))
+        name: new RegExp(basename(path).replace(/\./g, '\\.'))
       })
       .first()
       .waitFor();
-    state.file = file.path;
+    state.file = path;
   };
 
   // Types a File's part, without the terminal under it: a new file, from the Explorer's New File in its folder, or
@@ -523,8 +557,8 @@ export const playJourney = async (
   // the workspace, or the page shows a text.
   const condition = (page: Page, step: IPlayStep) => {
     if (step.file) {
-      const path = inWorkspace(files[step.file]);
-      return () => existsSync(path);
+      const file = files[step.file];
+      return () => matches(file).length > 0;
     }
     if (step.text) {
       const text = step.text;
@@ -645,6 +679,45 @@ export const playJourney = async (
           page,
           page.getByText(step.scrollTo ?? '', { exact: true })
         );
+        break;
+      case 'click': {
+        // the element that a person would name so: a button, a link, a tab, a box to tick, else a text
+        const name = step.click ?? '';
+        const roles = [
+          'button',
+          'link',
+          'tab',
+          'checkbox',
+          'radio',
+          'menuitem',
+          'option'
+        ] as const;
+        const byRole = roles
+          .slice(1)
+          .reduce(
+            (found, role) =>
+              found.or(page.getByRole(role, { name, exact: true })),
+            page.getByRole(roles[0], { name, exact: true })
+          );
+        const byText = page.getByText(name, { exact: true });
+        await byRole.or(byText).first().waitFor({ timeout: 30_000 });
+        await click(page, (await byRole.count()) > 0 ? byRole : byText);
+        break;
+      }
+      case 'fill': {
+        const name = step.fill ?? '';
+        await click(
+          page,
+          page
+            .getByLabel(name, { exact: true })
+            .or(page.getByPlaceholder(name, { exact: true }))
+        );
+        await page.keyboard.press('ControlOrMeta+a');
+        await type(page, String(step.value ?? ''));
+        break;
+      }
+      case 'press':
+        await page.keyboard.press(step.press ?? '');
         break;
       case 'pick':
         await click(page, page.getByLabel(step.pick ?? ''));

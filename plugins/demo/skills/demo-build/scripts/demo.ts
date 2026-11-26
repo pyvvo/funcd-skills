@@ -92,6 +92,8 @@ const localPorts = (demo: IDemo) => {
   return ports;
 };
 
+const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+
 const summary = (demo: IDemo) => {
   const steps = demo.chapters.reduce(
     (sum, chapter) => sum + chapter.steps.length,
@@ -114,7 +116,7 @@ const summary = (demo: IDemo) => {
   const { name, workspace, sites } = demo.environment;
   return [
     `${demo.name}: ${demo.title}`,
-    `  ${demo.opening.length} opening cards, ${demo.chapters.length} chapters of ${steps} steps${demo.recap ? ', a recap' : ''}`,
+    `  ${count(demo.opening.length, 'opening card')}, ${count(demo.chapters.length, 'chapter')} of ${count(steps, 'step')}${demo.recap ? ', a recap' : ''}`,
     `  types ${types || 'no File'}`,
     `  Environment ${name}: the workspace ${workspace}${Object.keys(sites).length ? `, the sites ${Object.keys(sites).join(', ')}` : ''}`
   ].join('\n');

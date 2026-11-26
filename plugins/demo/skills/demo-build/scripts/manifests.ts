@@ -36,6 +36,11 @@ export interface IStep {
   option?: string | number;
   upload?: string;
   file?: string;
+  // a page's elements, as a person uses them: a click by name, a field typed in, a key
+  click?: string;
+  fill?: string;
+  value?: string;
+  press?: string;
   // what the journey waits for: a URL's answer, a File, or a text on the page
   wait?: string;
   url?: string;
@@ -192,6 +197,9 @@ const actions: Record<string, string[]> = {
   scrollTo: [],
   pick: ['option'],
   upload: ['file'],
+  click: [],
+  fill: ['value'],
+  press: [],
   wait: ['url', 'method', 'body', 'until', 'file', 'text', 'timeout', 'speed'],
   card: [],
   hold: [],
@@ -557,11 +565,23 @@ export const loadDemo = (folderArg: string): IDemo => {
   for (const doc of ofKind('File')) {
     const value = doc.value;
     const where = label(doc);
-    if (!isPath(value.path) || value.path.endsWith('/')) {
-      problems.push(`${where}: path is a file's path from the project's root`);
+    if (
+      !isPath(value.path) ||
+      value.path.endsWith('/') ||
+      value.path
+        .split('/')
+        .slice(0, -1)
+        .some((part) => part.includes('*'))
+    ) {
+      problems.push(
+        `${where}: path is a file's path from the project's root, with a * in its name only`
+      );
       continue;
     }
-    if (value.source !== undefined && !isPath(value.source))
+    if (
+      value.source !== undefined &&
+      (!isPath(value.source) || value.source.includes('*'))
+    )
       problems.push(
         `${where}: source is a file's path from the project's root`
       );
@@ -938,6 +958,10 @@ export const loadDemo = (folderArg: string): IDemo => {
         break;
       case 'type':
         isFile('type');
+        if (files[String(step.type)]?.path.includes('*'))
+          problems.push(
+            `${here}: a File that type types has its whole name, with no *`
+          );
         if (
           step.part !== undefined &&
           !files[String(step.type)]?.parts?.[String(step.part)]
@@ -984,6 +1008,15 @@ export const loadDemo = (folderArg: string): IDemo => {
       case 'upload':
         isTextOf('upload');
         isFile('file');
+        break;
+      case 'click':
+      case 'press':
+        isTextOf(action);
+        break;
+      case 'fill':
+        isTextOf('fill');
+        if (typeof step.value !== 'string' && typeof step.value !== 'number')
+          problems.push(`${here}: fill needs value, the text that it types`);
         break;
       case 'wait': {
         isTextOf('wait');

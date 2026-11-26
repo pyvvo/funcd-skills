@@ -1,9 +1,9 @@
 // VS Code for the web, which the journey drives: the workspace's settings, then `code serve-web` started as a process
 // group of its own, and stopped with it.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, openSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
 import { connect } from 'node:net';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import type { IDemo } from './manifests.ts';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -78,8 +78,26 @@ export const editorSettings = (demo: IDemo) => {
       },
       'editor.suggestOnTriggerCharacters': false,
       'editor.acceptSuggestionOnEnter': 'off',
+      'editor.acceptSuggestionOnCommitCharacter': false,
+      'editor.inlineSuggest.enabled': false,
+      'editor.parameterHints.enabled': false,
+      'editor.snippetSuggestions': 'none',
+      'editor.tabCompletion': 'off',
+      // nothing typed in for the journey: what it types is the file
       'editor.autoClosingQuotes': 'never',
       'editor.autoClosingBrackets': 'never',
+      'editor.autoClosingComments': 'never',
+      'editor.autoClosingOvertype': 'never',
+      'editor.autoSurround': 'never',
+      'editor.formatOnType': false,
+      'editor.formatOnPaste': false,
+      'editor.linkedEditing': false,
+      'html.autoClosingTags': false,
+      'javascript.autoClosingTags': false,
+      'typescript.autoClosingTags': false,
+      'javascript.suggest.completeJSDocs': false,
+      'typescript.suggest.completeJSDocs': false,
+      'emmet.showExpandedAbbreviation': 'never',
       'files.autoSave': 'off',
       'git.enabled': false,
       'telemetry.telemetryLevel': 'off',
@@ -128,6 +146,20 @@ export const isPortTaken = async (port: number) => {
   return (await answers('127.0.0.1')) || (await answers('::1'));
 };
 
+// VS Code's `code` command: the first on the PATH, but for the one that a VS Code server puts first in its own
+// terminals, which opens files in that editor, as when the engine runs inside a demo
+const codeCommand = () =>
+  (process.env.PATH ?? '')
+    .split(delimiter)
+    .filter((folder) => folder !== '' && !folder.includes('remote-cli'))
+    .map((folder) => join(folder, 'code'))
+    .find((path) => existsSync(path));
+
+const serverEnv = () => {
+  const { VSCODE_IPC_HOOK_CLI: _, ...env } = process.env;
+  return env;
+};
+
 // Starts `code serve-web` on the workspace, in a process group of its own, and waits until it answers. Its output
 // goes to editor.log in the state folder.
 export const startEditor = async (
@@ -136,11 +168,12 @@ export const startEditor = async (
   onStart: (pid: number) => void
 ) => {
   const { port, commit } = demo.environment.editor;
-  if (spawnSync('code', ['--version'], { stdio: 'ignore' }).error)
+  const code = codeCommand();
+  if (!code || spawnSync(code, ['--version'], { stdio: 'ignore' }).error)
     throw new Error('no VS Code `code` command on the PATH');
   const log = openSync(join(state, 'editor.log'), 'a');
   const child = spawn(
-    'code',
+    code,
     [
       'serve-web',
       ...(commit ? ['--commit-id', commit] : []),
@@ -154,7 +187,8 @@ export const startEditor = async (
       '--server-data-dir',
       join(state, 'editor')
     ],
-    { detached: true, stdio: ['ignore', log, log] }
+    // a VS Code terminal's link to its own editor, which this server is not
+    { detached: true, stdio: ['ignore', log, log], env: serverEnv() }
   );
   child.unref();
   if (child.pid === undefined) throw new Error('code serve-web did not start');
