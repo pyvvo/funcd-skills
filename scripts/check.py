@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Check every skill under skills/ against the Agent Skills specification and the authoring best practices.
+"""Check every skill, under skills/ and plugins/*/skills/, against the Agent Skills specification and the authoring
+best practices.
 
     python3 scripts/check.py
 
@@ -79,7 +80,7 @@ def check_skill(folder: Path) -> list[str]:
 
 
 def main() -> int:
-    folders = sorted(p.parent for p in (ROOT / "skills").glob("*/SKILL.md"))
+    folders = sorted(p.parent for p in [*ROOT.glob("skills/*/SKILL.md"), *ROOT.glob("plugins/*/skills/*/SKILL.md")])
     if not folders:
         print("check: no skills/*/SKILL.md")
         return 1

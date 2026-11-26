@@ -9,6 +9,11 @@
       "name": "funcd",
       "source": "./",
       "description": "Build, run and deploy Functions, Apps, Sites and Workflows on funcd with funcdctl, from funcd's docs."
+    },
+    {
+      "name": "demo",
+      "source": "./plugins/demo",
+      "description": "Plan a demo video of a project's feature with the user, then record it from a folder of YAML manifests, in VS Code for the web and the project's pages, with Playwright."
     }
   ]
 }
