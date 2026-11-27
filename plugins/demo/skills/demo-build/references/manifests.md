@@ -17,6 +17,7 @@ work.
 - Steps
 - The steps' actions
 - The commands
+- Parts
 - What the engine does
 
 ## The folder
@@ -210,15 +211,17 @@ A step is one action, named by its first key, and `hold`, the seconds to wait af
 
 Run the engine from the project's root, or under it: `node <demo-build>/scripts/demo.ts <command> <folder> ...`.
 
-| Command                                  | What it does                                                                     |
-| ---------------------------------------- | -------------------------------------------------------------------------------- |
-| `check <folder>`                         | Reads and checks the manifests, naming every mistake at once, then sums them up. |
-| `cards <folder> <out>`                   | Draws each card as a PNG, and `cards.png`, all of them on one sheet.             |
-| `up <folder>`                            | Runs the setup, then starts the editor: everything that the journey uses.        |
-| `play <folder> <out> [<last chapter>]`   | Plays the demo and records it into `<out>`; `<last chapter>` stops after it.     |
-| `render <folder> <out>`                  | Renders what `play` recorded in `<out>` into the video.                          |
-| `down <folder>`                          | Stops the editor, then runs the teardown.                                        |
-| `record <folder> <out> [<last chapter>]` | `up`, `play`, `render` into `<out>`, then `down`, whatever happens.              |
+| Command                                  | What it does                                                                           |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `check <folder>`                         | Reads and checks the manifests, naming every mistake at once, then sums them up.       |
+| `cards <folder> <out>`                   | Draws each card as a PNG, and `cards.png`, all of them on one sheet.                   |
+| `up <folder>`                            | Runs the setup, then starts the editor: everything that the journey uses.              |
+| `play <folder> <out> [<last chapter>]`   | Plays the demo and records it into `<out>`; `<last chapter>` stops after it.           |
+| `render <folder> <out>`                  | Renders what `play` recorded in `<out>` into parts, then the video once all are there. |
+| `merge <folder> <out>`                   | Joins the parts in `<out>/parts/` into the video, with no encoding.                    |
+| `down <folder>`                          | Stops the editor, then runs the teardown.                                              |
+| `record <folder> <out> [<last chapter>]` | `up`, `play`, `render` into `<out>`, then `down`, whatever happens.                    |
+| `record <folder> <out> --chapters <a,b>` | The same for the parts named only, keeping the others: see Parts.                      |
 
 - `check` and `cards` start nothing. `cards` exits 1 on a card whose text overflows the screen.
 - A failed step names its file, its chapter, its step and its action, and leaves `failed.png` in `<out>`.
@@ -226,6 +229,25 @@ Run the engine from the project's root, or under it: `node <demo-build>/scripts/
   it needs from that folder, even when the manifests changed since.
 - The engine needs Node.js 22.18 or later, yq, ffmpeg, VS Code's `code` command, and Playwright in the project's
   dependencies, with its Chromium.
+
+## Parts
+
+The video is made of parts, in this order: `opening`, each Chapter by its name, from its card, and `recap`. A chapter's
+card is a full-screen transition, so a seam falls where the viewer expects a cut. The render writes each part to
+`<out>/parts/`, as `<part>.webm`, `<part>.mp4` and `<part>.json`, all with the same settings, and `merge` joins them
+with ffmpeg's concat demuxer, with no encoding. No Chapter is named `opening` or `recap`.
+
+- `record <folder> <out> --chapters in-the-app,recap` records the parts named, keeps the others' files in
+  `<out>/parts/`, then merges them all. The chapters before the first part named play as written, to leave the state
+  that it starts from: an App deployed, a file typed, a terminal's history. Their video goes, and the journey stops
+  after the last part named. A live demo spends its live time on them again.
+- A part's `.json` keeps the hash of what it shows: its cards, its steps with the text that they type, the files that
+  they open, and the look of the recording. `merge` refuses a part that is missing, or whose hash no longer matches,
+  and names it.
+- What the chapters before a part leave is not in its hash: a change that alters what a later chapter starts from,
+  such as a file typed or a command run, needs that chapter recorded again too. Name it in `--chapters`.
+- To keep the parts for a later fix, keep `<out>/parts/` beside the video. Whether the project commits it is its
+  choice: it about doubles the videos' weight.
 
 ## What the engine does
 
@@ -238,5 +260,5 @@ Run the engine from the project's root, or under it: `node <demo-build>/scripts/
 - **The workspace** is the only place that the engine writes: those settings, and each typed File's starting text.
 - **The video** is Playwright's recording of one page, which goes from the editor to the sites and back. Cards are
   frames laid over that page, so the editor keeps its state under them. The render cuts the editor's first visit,
-  plays each long wait faster, writes `<name>.webm` (VP9) and `<name>.mp4` (H.264) with ffmpeg, and takes the poster
-  shortly before the recap.
+  plays each long wait faster, writes each part as WebM (VP9) and MP4 (H.264) with ffmpeg, and `merge` joins them into
+  `<name>.webm` and `<name>.mp4`, and takes the poster shortly before the recap.

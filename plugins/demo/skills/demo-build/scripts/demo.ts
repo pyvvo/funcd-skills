@@ -23,17 +23,20 @@ import {
 } from './editor.ts';
 import { playJourney } from './journey.ts';
 import { type IDemo, actionOf, loadDemo } from './manifests.ts';
-import { renderVideo } from './render.ts';
+import { partNames } from './parts.ts';
+import { mergeParts, renderParts } from './render.ts';
 
-const usage = `usage: node demo.ts <command> <folder> [<output folder>] [<last chapter>]
+const usage = `usage: node demo.ts <command> <folder> [<output folder>] [<last chapter>] [--chapters <names>]
 
   check <folder>                          check the manifests, naming every mistake
   cards <folder> <out>                    the cards as images, and cards.png with all of them
   up <folder>                             setup, then the editor: all that the journey uses
   play <folder> <out> [<last chapter>]    the journey, recorded in <out>; 0 plays the opening alone
-  render <folder> <out>                   the video, from what play recorded in <out>
+  render <folder> <out>                   the parts that play recorded in <out>, then the video once all are there
+  merge <folder> <out>                    join the parts in <out>/parts into the video, with no encoding
   down <folder>                           stop the editor, then teardown
-  record <folder> <out> [<last chapter>]  up, play, render into <out>, then down, whatever happens`;
+  record <folder> <out> [<last chapter>]  up, play, render the parts into <out> and merge them, then down
+  record <folder> <out> --chapters <a,b>  the same for the parts named, keeping the others: opening, a chapter, recap`;
 
 // What `down` needs, saved by `up`, so that it tears down even when the manifests changed or broke since
 interface IState {
@@ -225,14 +228,28 @@ const play = async (demo: IDemo, out: string, last?: number) => {
   await playJourney(demo, resolve(out), last);
 };
 
+// Joins the parts into the video; when the journey played only some of them, says why it did not
+const tryMerge = (out: string, demo: IDemo) => {
+  try {
+    mergeParts(resolve(out), demo);
+  } catch (error) {
+    console.log((error as Error).message);
+  }
+};
+
 const main = async () => {
-  const [command, folder, out, lastArg] = process.argv.slice(2);
-  const needsOut = ['cards', 'play', 'render', 'record'];
+  const args = process.argv.slice(2);
+  const flag = args.indexOf('--chapters');
+  const chaptersArg = flag === -1 ? undefined : args[flag + 1];
+  const [command, folder, out, lastArg] =
+    flag === -1 ? args : [...args.slice(0, flag), ...args.slice(flag + 2)];
+  const needsOut = ['cards', 'play', 'render', 'merge', 'record'];
   if (
     !command ||
     !folder ||
     !['check', 'up', 'down', ...needsOut].includes(command) ||
-    (needsOut.includes(command) && !out)
+    (needsOut.includes(command) && !out) ||
+    (flag !== -1 && (command !== 'record' || !chaptersArg))
   ) {
     console.error(usage);
     process.exit(2);
@@ -240,8 +257,31 @@ const main = async () => {
   const last = lastArg === undefined ? undefined : Number(lastArg);
   if (last !== undefined && !(Number.isInteger(last) && last >= 0))
     throw new Error(`the last chapter is a number, not ${lastArg}`);
+  if (last !== undefined && chaptersArg !== undefined)
+    throw new Error('record takes a last chapter or --chapters, not both');
   if (command === 'down') return down(stateOf(folder));
   const demo = loadDemo(folder);
+  // the parts that --chapters names, and how far the journey plays to reach the last of them
+  const names = partNames(demo);
+  const only = chaptersArg
+    ?.split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+  for (const name of only ?? []) {
+    if (!names.includes(name))
+      throw new Error(`no part ${name}: the parts are ${names.join(', ')}`);
+  }
+  const reach = only
+    ? only.includes('recap')
+      ? demo.chapters.length
+      : Math.max(
+          0,
+          ...only.map(
+            (name) =>
+              demo.chapters.findIndex((chapter) => chapter.name === name) + 1
+          )
+        )
+    : last;
   switch (command) {
     case 'check':
       console.log(summary(demo));
@@ -259,7 +299,11 @@ const main = async () => {
       await play(demo, out, last);
       return;
     case 'render':
-      renderVideo(resolve(out), resolve(out), demo.name);
+      renderParts(resolve(out), resolve(out), demo);
+      tryMerge(out, demo);
+      return;
+    case 'merge':
+      mergeParts(resolve(out), demo);
       return;
     case 'record': {
       const state = await up(demo);
@@ -270,9 +314,13 @@ const main = async () => {
       process.once('SIGTERM', stop);
       const video = join(state, 'video');
       try {
-        await play(demo, video, last);
+        // the chapters before the first part named play as written, to leave what it starts from; their video goes
+        await play(demo, video, reach);
         mkdirSync(resolve(out), { recursive: true });
-        renderVideo(video, resolve(out), demo.name);
+        renderParts(video, resolve(out), demo, only);
+        // the whole demo, or the parts named with those kept, makes the video; a review of the first chapters does not
+        if (last === undefined) mergeParts(resolve(out), demo);
+        else tryMerge(out, demo);
       } catch (error) {
         // the state folder goes with the teardown: keep the page as it failed
         if (existsSync(join(video, 'failed.png'))) {
