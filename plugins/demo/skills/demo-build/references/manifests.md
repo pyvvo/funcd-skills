@@ -33,8 +33,12 @@ docs/demo/
     ├── 1-<chapter>.yaml    # one Chapter a file
     ├── 2-<chapter>.yaml
     ├── setup.sh            # its own setup, when it has one
-    └── <name>.mp4          # the video, and <name>.webm and <name>.png, its poster
+    ├── <name>.mp4          # the video, <name>.webm, and <name>.png, its poster: never committed
+    └── parts/              # the video's parts, for a later fix: never committed
 ```
+
+The video, its poster and its parts are built, never committed: the project's `.gitignore` keeps them out of git
+(`docs/demo/*/*.mp4`, `*.webm`, `*.png` and `docs/demo/*/parts/`), and the video goes to its viewers directly.
 
 The engine reads every `*.yaml` file directly in the demo's folder, and the files and folders that the Demo's
 `include` lists. A file holds one manifest or more, separated by `---`. Exactly one manifest is a Demo. Other files go
@@ -246,8 +250,8 @@ with ffmpeg's concat demuxer, with no encoding. No Chapter is named `opening` or
   and names it.
 - What the chapters before a part leave is not in its hash: a change that alters what a later chapter starts from,
   such as a file typed or a command run, needs that chapter recorded again too. Name it in `--chapters`.
-- To keep the parts for a later fix, keep `<out>/parts/` beside the video. Whether the project commits it is its
-  choice: it about doubles the videos' weight.
+- Keep `<out>/parts/` beside the video for a later fix, out of git as the video is. A checkout without them records
+  the whole demo once.
 
 ## What the engine does
 

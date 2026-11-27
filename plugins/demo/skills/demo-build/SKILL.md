@@ -61,21 +61,24 @@ within a few seconds of the old one, unless the manifests changed.
 
 ## 4. Ship it
 
-- Copy the checked render into the demo's folder: `<name>.webm`, `<name>.mp4`, its poster `<name>.png`, and `parts/`
-  when the project keeps it for later fixes. The teardown removes the raw recording, so the files that you checked are
-  the ones to ship.
-- Run the project's own checks, as its format and lint, on what changed, then open a pull request whose description
-  gives the run, the video's length and what the frame checks found. Merge it only on the user's word, as the
-  project's rules say.
+- **The video is never committed.** Copy the checked render into the demo's folder: `<name>.webm`, `<name>.mp4`, its
+  poster `<name>.png`, and `parts/`, for later fixes. The project's `.gitignore` keeps them out of git
+  (`docs/demo/*/*.mp4`, `*.webm`, `*.png` and `docs/demo/*/parts/`): add those lines when it lacks them. The teardown
+  removes the raw recording, so the files that you checked are the ones to keep.
+- Send the video to the user directly.
+- Run the project's own checks, as its format and lint, on what changed, then open a pull request with the manifests,
+  the Environment's scripts and any tool pins. Its description gives the run, the video's length and what the frame
+  checks found. Merge it only on the user's word, as the project's rules say.
 
 ## A change to a recorded demo
 
 Record again only the parts that changed: the opening, a chapter, or the recap.
 
-- Copy the demo's `parts/` into a scratch folder, then run `demo.ts record <folder> <scratch> --chapters <names>`. It
+- Copy the demo's `parts/`, the last run's, which stay out of git, into a scratch folder; a checkout without them
+  records the whole demo once. Then run `demo.ts record <folder> <scratch> --chapters <names>`. It
   plays the chapters before the first part named as written, as they leave what it starts from, records the parts
   named, keeps the others, and merges them all. Name too a chapter that starts from what a changed one leaves, as a
   file typed or a command run. `merge` refuses a part whose chapter changed since it was recorded, and names it.
 - Check the new parts' frames, and each of their seams: the last second of the part before, and the first of the part
   after. The video's length, which `merge` prints, is the sum of its parts'.
-- Ship the new parts' files with the video and its poster.
+- Keep the new parts with the video in the demo's ignored folder, and send the video to the user.
