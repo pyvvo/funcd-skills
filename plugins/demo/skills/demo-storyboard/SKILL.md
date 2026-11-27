@@ -44,7 +44,8 @@ Ask with the question tool when there is one, each question with a recommended a
 
 - **The story's order:** a `text` card with the goal and the scenario; a `list` card of why, 4 or 5 points of what the
   feature saves; a `list` card of the tools, each with what it does; a `contents` card; a `tree` card of the files
-  that the developer writes, drawn from their Files; then the chapters; a `tree` card of what a command generates, where one does; a recap card.
+  that the developer writes, drawn from their Files; then the chapters; a `tree` card of what a command generates,
+  where one does; a recap card.
 - **Files first:** one for each file that a step opens, types or uploads, with its path in the project and a comment of
   a few words, which a tree card shows. A file typed in two chapters gets `parts`, split at its own lines.
 - **A chapter** shows its file in the editor first, then the same layer where it shows its result: a site or the
@@ -54,6 +55,10 @@ Ask with the question tool when there is one, each question with a recommended a
   file or the command. Hold a caption 4 to 7 seconds when the viewer reads it, 2 to 3 between actions.
 - **Waits:** a `wait` on what the project does (an answer, a file, a text), never a long `hold`; a slow command, as a
   build, gets `speed: 16`.
+- **Names in commands:** a command types the names that the demo knows in advance: the manifests' own (an App, a
+  Function, a Job), a run that the demo starts and names itself, a revision that follows from its generation. Look up
+  a generated name, as `$(… | jq …)`, only when there is no other way, as for a run that the platform names itself
+  with no command that takes its owner's name; then the caption says what the lookup finds.
 - **Steps:** a sequence that chapters repeat, as a wait and then a page, becomes a Steps with params.
 - **The Environment:** its workspace is a copy that its setup makes, as a git worktree of the current commit, never the
   project itself, and its teardown removes only what its own run made. Its scripts are the project's code: write them
