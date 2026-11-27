@@ -3,7 +3,7 @@ name: funcd
 description: Builds, runs and deploys workloads on funcd, the single-binary serverless platform, with funcdctl — Functions and their handlers in TypeScript or Python, Apps, Sites, Workflows, and the resources they use (KVStore, Bucket, SQLDatabase, Lake, Secret, ConfigMap, EventSource, Sensor, Route, EgressPolicy, Identity, RolesAssignment, Policy, BackupSchedule, Restore). Use when the user writes a funcd handler or manifest, runs or debugs funcdctl dev, funcdctl apply, get or logs, reads a funcd status reason, or mentions funcd or funcdctl.
 license: Apache-2.0
 metadata:
-  docs-release: "v0.49.1"
+  docs-release: "v0.51.0"
   docs: "https://funcd.dev/llms.txt"
 ---
 
@@ -135,7 +135,7 @@ The docs describe funcd's latest release; `metadata.docs-release` names the rele
   - [funcd](https://funcd.dev/docs/develop/running-funcd/spec.md): Every key of funcdconfig.yaml with its type, default, limits and variable, then every funcd command with its flags.
 - Workloads
   - Function
-    - [Function](https://funcd.dev/docs/develop/workloads/function.md): Run a Function, call it, read its status and its logs, call one Function from another, serve HTTP, and scale to zero.
+    - [Function](https://funcd.dev/docs/develop/workloads/function.md): Run a Function, call it, read its status and its logs, call one Function from another, serve HTTP, stream a response, take WebSocket connections, and scale to zero.
     - [Function, Revision and Invocation spec and handler API](https://funcd.dev/docs/develop/workloads/function/spec.md): Every field of Function, Revision and Invocation, then the methods a handler calls on ctx.
   - App
     - [App](https://funcd.dev/docs/develop/workloads/app.md): Install an App from its template, read its status and its parts, change a value, roll back, run its hooks, and delete it.
