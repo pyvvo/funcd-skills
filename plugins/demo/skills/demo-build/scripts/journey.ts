@@ -70,8 +70,9 @@ const escape = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // The overlay that every page gets: a caption at the bottom and a cursor that follows the mouse, which the video
-// would not show otherwise.
-const overlay = () => {
+// would not show otherwise, and on a site's page, when the Environment asks for it, the bar of its address that a
+// browser would show above it.
+const overlay = (options: { editorOrigin: string; addressBar: boolean }) => {
   const install = () => {
     // a card's frame gets no overlay: it would show the last caption inside the card
     if (window !== window.top || document.getElementById('demo-cursor')) return;
@@ -91,13 +92,46 @@ const overlay = () => {
       .demo-slide { position: fixed; inset: 0; z-index: 2147483645; width: 100%; height: 100%; border: 0;
         opacity: 0; transition: opacity 0.4s; background: #0d0d14; }
       .demo-slide.shown { opacity: 1; }
-      body.demo-slides #demo-cursor, body.demo-slides #demo-caption { display: none !important; }`;
+      html.demo-address { margin-top: 36px !important; scrollbar-width: none; }
+      #demo-address { position: fixed; z-index: 2147483644; top: 0; left: 0; right: 0; height: 36px;
+        box-sizing: border-box; display: flex; align-items: center; padding: 0 14px; background: #202124;
+        border-bottom: 1px solid #3c4043; pointer-events: none; }
+      #demo-address span { flex: 1; display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 12px;
+        border-radius: 13px; background: #303134; color: #e8eaed; white-space: nowrap; overflow: hidden;
+        font: 400 13.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+      body.demo-slides #demo-cursor, body.demo-slides #demo-caption, body.demo-slides #demo-address {
+        display: none !important; }`;
     document.head.appendChild(style);
     const cursor = document.createElement('div');
     cursor.id = 'demo-cursor';
     const caption = document.createElement('div');
     caption.id = 'demo-caption';
     document.body.append(cursor, caption);
+    if (
+      options.addressBar &&
+      location.origin !== options.editorOrigin &&
+      /^https?:$/.test(location.protocol)
+    ) {
+      // the page starts below the bar, as below a browser's, and the scroll bar of a page as tall as the window goes
+      document.documentElement.classList.add('demo-address');
+      const address = document.createElement('div');
+      address.id = 'demo-address';
+      const field = document.createElement('span');
+      address.append(field);
+      document.body.append(address);
+      const lock =
+        '<svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="#9aa0a6" stroke-width="1.5">' +
+        '<rect x="1" y="5.5" width="9" height="6.5" rx="1.2"/><path d="M3 5.5V3.8a2.5 2.5 0 0 1 5 0v1.7"/></svg>';
+      // a page that changes its address without loading, as a single-page app, keeps the bar in step
+      const show = () => {
+        if (field.dataset.href === location.href) return;
+        field.dataset.href = location.href;
+        field.innerHTML = location.protocol === 'https:' ? lock : '';
+        field.append(location.href);
+      };
+      show();
+      setInterval(show, 300);
+    }
     // a caption belongs to its site: a reload keeps it
     const stored = sessionStorage.getItem('demo-caption');
     if (stored) {
@@ -123,6 +157,27 @@ const overlay = () => {
       true
     );
   };
+  // the editor's document stays under a dark veil from its first frame until the journey sees it loaded: VS Code
+  // draws its light theme for a moment before it reads the workspace's dark one, which would flash in the video
+  if (window === window.top && location.origin === options.editorOrigin) {
+    const veil = () => {
+      const style = document.createElement('style');
+      style.id = 'demo-veil';
+      style.textContent = `html { background: #1f1f1f; }
+        html::after { content: ''; position: fixed; inset: 0; z-index: 2147483647; background: #1f1f1f;
+          pointer-events: none; }`;
+      document.documentElement.append(style);
+    };
+    if (document.documentElement) veil();
+    else {
+      const observer = new MutationObserver(() => {
+        if (!document.documentElement) return;
+        observer.disconnect();
+        veil();
+      });
+      observer.observe(document, { childList: true });
+    }
+  }
   if (document.body) install();
   else document.addEventListener('DOMContentLoaded', install);
 };
@@ -186,6 +241,7 @@ export const playJourney = async (
     page: 'editor',
     file: '',
     isTerminalFocused: false,
+    hasTerminal: false,
     cards: [] as ICardShow[]
   };
 
@@ -370,6 +426,8 @@ export const playJourney = async (
       .first()
       .waitFor({ timeout: 60_000 });
     await sleep(1500);
+    // loaded, in its own theme: the veil that hid its first frames goes
+    await page.evaluate(() => document.getElementById('demo-veil')?.remove());
   };
 
   // A fresh browser's first visit: trust the folder, and close the walkthrough and the secondary side bar, before the
@@ -379,6 +437,24 @@ export const playJourney = async (
       name: 'Yes, I trust the authors'
     });
     if (await trust.isVisible().catch(() => false)) await trust.click();
+    // VS Code 1.148 opens the folder in Restricted Mode with no dialog, and Restricted Mode ignores the workspace's
+    // terminal profile, so its terminal would be the user's shell: trust the folder in the Workspace Trust editor.
+    const restricted = page
+      .locator('.statusbar-item')
+      .filter({ hasText: 'Restricted Mode' })
+      .first();
+    if (
+      await restricted
+        .waitFor({ timeout: 3000 })
+        .then(() => true)
+        .catch(() => false)
+    ) {
+      await command(page, 'Workspaces: Manage Workspace Trust');
+      await page.getByRole('button', { name: 'Trust', exact: true }).click();
+      await restricted.waitFor({ state: 'detached' });
+      // the editor opens as an overlay, which would keep the command palette from opening
+      await page.keyboard.press('Escape');
+    }
     await sleep(1000);
     await command(page, 'View: Close All Editors');
     if (
@@ -435,6 +511,13 @@ export const playJourney = async (
   const focusTerminal = async (page: Page) => {
     if (state.isTerminalFocused) return;
     const screens = page.locator('.terminal-wrapper .xterm-screen');
+    // the editor restores the journey's terminals a moment after a reload: wait for them rather than open another one,
+    // which would take the command before its shell is up
+    if (state.hasTerminal)
+      await screens
+        .last()
+        .waitFor({ timeout: 20_000 })
+        .catch(() => undefined);
     if ((await screens.count()) === 0) {
       await command(page, 'Terminal: Create New Terminal');
       await screens.first().waitFor();
@@ -447,6 +530,7 @@ export const playJourney = async (
       await sleep(200);
       await page.keyboard.press('Backspace');
     }
+    state.hasTerminal = true;
     state.isTerminalFocused = true;
   };
 
@@ -757,7 +841,10 @@ export const playJourney = async (
     colorScheme: 'dark',
     recordVideo: { dir: out, size: viewport }
   });
-  await context.addInitScript(overlay);
+  await context.addInitScript(overlay, {
+    editorOrigin: new URL(editorUrl).origin,
+    addressBar: environment.addressBar
+  });
   const page = await context.newPage();
   startedAt = Date.now();
   try {
