@@ -101,6 +101,8 @@ export interface IEnvironment {
     settings: Record<string, unknown>;
   };
   viewport: { width: number; height: number };
+  // a browser's address bar above a site's page
+  addressBar: boolean;
   typingDelay: number;
 }
 
@@ -161,7 +163,8 @@ const kinds: Record<string, string[]> = {
     'sites',
     'editor',
     'viewport',
-    'typingDelay'
+    'typingDelay',
+    'addressBar'
   ],
   Card: [
     'layout',
@@ -517,6 +520,8 @@ export const loadDemo = (folderArg: string): IDemo => {
   const typingDelay = env.typingDelay ?? editorDefaults.typingDelay;
   if (typeof typingDelay !== 'number' || typingDelay < 0)
     problems.push(`${envLabel}: typingDelay is milliseconds a character`);
+  if (env.addressBar !== undefined && typeof env.addressBar !== 'boolean')
+    problems.push(`${envLabel}: addressBar is true or false`);
   for (const key of ['setup', 'start', 'teardown']) {
     if (env[key] !== undefined && !isText(env[key]))
       problems.push(`${envLabel}: ${key} is a command`);
@@ -542,7 +547,8 @@ export const loadDemo = (folderArg: string): IDemo => {
       width: Number(viewport.width),
       height: Number(viewport.height)
     },
-    typingDelay: Number(typingDelay)
+    typingDelay: Number(typingDelay),
+    addressBar: env.addressBar === true
   };
 
   // The Files, and the text of each one that has parts or that a step types, read from the project

@@ -70,8 +70,9 @@ const escape = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // The overlay that every page gets: a caption at the bottom and a cursor that follows the mouse, which the video
-// would not show otherwise, and on a site's page, the bar of its address that a browser would show above it.
-const overlay = (editorOrigin: string) => {
+// would not show otherwise, and on a site's page, when the Environment asks for it, the bar of its address that a
+// browser would show above it.
+const overlay = (options: { editorOrigin: string; addressBar: boolean }) => {
   const install = () => {
     // a card's frame gets no overlay: it would show the last caption inside the card
     if (window !== window.top || document.getElementById('demo-cursor')) return;
@@ -106,7 +107,11 @@ const overlay = (editorOrigin: string) => {
     const caption = document.createElement('div');
     caption.id = 'demo-caption';
     document.body.append(cursor, caption);
-    if (location.origin !== editorOrigin && /^https?:$/.test(location.protocol)) {
+    if (
+      options.addressBar &&
+      location.origin !== options.editorOrigin &&
+      /^https?:$/.test(location.protocol)
+    ) {
       // the page starts below the bar, as below a browser's, and the scroll bar of a page as tall as the window goes
       document.documentElement.classList.add('demo-address');
       const address = document.createElement('div');
@@ -152,6 +157,27 @@ const overlay = (editorOrigin: string) => {
       true
     );
   };
+  // the editor's document stays under a dark veil from its first frame until the journey sees it loaded: VS Code
+  // draws its light theme for a moment before it reads the workspace's dark one, which would flash in the video
+  if (window === window.top && location.origin === options.editorOrigin) {
+    const veil = () => {
+      const style = document.createElement('style');
+      style.id = 'demo-veil';
+      style.textContent = `html { background: #1f1f1f; }
+        html::after { content: ''; position: fixed; inset: 0; z-index: 2147483647; background: #1f1f1f;
+          pointer-events: none; }`;
+      document.documentElement.append(style);
+    };
+    if (document.documentElement) veil();
+    else {
+      const observer = new MutationObserver(() => {
+        if (!document.documentElement) return;
+        observer.disconnect();
+        veil();
+      });
+      observer.observe(document, { childList: true });
+    }
+  }
   if (document.body) install();
   else document.addEventListener('DOMContentLoaded', install);
 };
@@ -400,6 +426,8 @@ export const playJourney = async (
       .first()
       .waitFor({ timeout: 60_000 });
     await sleep(1500);
+    // loaded, in its own theme: the veil that hid its first frames goes
+    await page.evaluate(() => document.getElementById('demo-veil')?.remove());
   };
 
   // A fresh browser's first visit: trust the folder, and close the walkthrough and the secondary side bar, before the
@@ -813,7 +841,10 @@ export const playJourney = async (
     colorScheme: 'dark',
     recordVideo: { dir: out, size: viewport }
   });
-  await context.addInitScript(overlay, new URL(editorUrl).origin);
+  await context.addInitScript(overlay, {
+    editorOrigin: new URL(editorUrl).origin,
+    addressBar: environment.addressBar
+  });
   const page = await context.newPage();
   startedAt = Date.now();
   try {

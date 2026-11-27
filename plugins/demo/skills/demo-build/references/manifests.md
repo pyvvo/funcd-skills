@@ -81,6 +81,7 @@ Where a demo plays: the workspace, the services that the sites serve, and the ed
 | `editor`      | VS Code for the web: `port`, `commit`, `acceptLicense`, `env` and `settings`, below.                               |
 | `viewport`    | The recording's `width` and `height`: 1280 and 720 by default.                                                     |
 | `typingDelay` | Milliseconds a typed character: 18 by default.                                                                     |
+| `addressBar`  | `true` draws a browser's address bar above a site's page: its URL, with a lock for https. `false` by default.      |
 
 - `editor.port` is the editor's port, 8799 by default. `editor.commit` is the VS Code build that serve-web runs,
   its `--commit-id`, which it downloads once when it is not cached. `editor.acceptLicense: true` accepts the VS Code
@@ -232,8 +233,8 @@ Run the engine from the project's root, or under it: `node <demo-build>/scripts/
   settings in the browser, so the engine writes the workspace's `.vscode/settings.json`: no walkthrough, no AI, no
   suggestions, no autosave, a long hover delay, as a tooltip shows a file's full path, and a terminal whose prompt
   shows the Demo's `prompt` alone.
-- **A site's page** shows its address in a bar above it, as a browser would: the video has no browser around the
-  page. The page starts 36 pixels lower, below the bar.
+- **A site's page**, when the Environment's `addressBar` is true, shows its address in a bar above it, as a browser
+  would: the video has no browser around the page. The page starts 36 pixels lower, below the bar.
 - **The workspace** is the only place that the engine writes: those settings, and each typed File's starting text.
 - **The video** is Playwright's recording of one page, which goes from the editor to the sites and back. Cards are
   frames laid over that page, so the editor keeps its state under them. The render cuts the editor's first visit,
