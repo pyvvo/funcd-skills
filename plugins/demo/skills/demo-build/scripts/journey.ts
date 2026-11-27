@@ -379,6 +379,24 @@ export const playJourney = async (
       name: 'Yes, I trust the authors'
     });
     if (await trust.isVisible().catch(() => false)) await trust.click();
+    // VS Code 1.148 opens the folder in Restricted Mode with no dialog, and Restricted Mode ignores the workspace's
+    // terminal profile, so its terminal would be the user's shell: trust the folder in the Workspace Trust editor.
+    const restricted = page
+      .locator('.statusbar-item')
+      .filter({ hasText: 'Restricted Mode' })
+      .first();
+    if (
+      await restricted
+        .waitFor({ timeout: 3000 })
+        .then(() => true)
+        .catch(() => false)
+    ) {
+      await command(page, 'Workspaces: Manage Workspace Trust');
+      await page.getByRole('button', { name: 'Trust', exact: true }).click();
+      await restricted.waitFor({ state: 'detached' });
+      // the editor opens as an overlay, which would keep the command palette from opening
+      await page.keyboard.press('Escape');
+    }
     await sleep(1000);
     await command(page, 'View: Close All Editors');
     if (
