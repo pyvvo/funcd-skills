@@ -26,14 +26,20 @@ export interface ISegment {
   speed: number;
 }
 
+// Where a part of the demo begins in the recording: the opening, a chapter from its card, or the recap
+export interface IPartMark {
+  name: string;
+  at: number;
+}
+
 // What the render needs, in journey.json: the recording, where its kept part begins, its length, its sped-up parts,
-// and when the recap card shows
+// and where each part that the journey played begins, in order
 export interface IJourney {
   video: string;
   begin: number;
   duration: number;
   segments: ISegment[];
-  recap?: number;
+  parts: IPartMark[];
 }
 
 // A row of the editor's Explorer
@@ -44,11 +50,11 @@ interface IRow {
   expanded: string | null;
 }
 
-// A card waiting to be shown
+// A card waiting to be shown, and the part that begins with it: a chapter's card, or the recap
 interface ICardShow {
   html: string;
   seconds: number;
-  isRecap?: boolean;
+  part?: string;
 }
 
 // Playwright, from the project: the engine ships no packages of its own.
@@ -230,7 +236,7 @@ export const playJourney = async (
   let startedAt = 0;
   // where the kept part of the video begins: after the editor's first visit
   let begin = 0;
-  let recapAt: number | undefined;
+  const parts: IPartMark[] = [];
   const now = () => (Date.now() - startedAt) / 1000;
   // where the visible cursor rests, which a command palette click returns it to
   let mouse = middle;
@@ -351,8 +357,8 @@ export const playJourney = async (
   // Cards over the page, each for its seconds: the next one fades in over the one before, so the page shows again
   // only after the last one. The page underneath keeps its state.
   const slides = async (page: Page, cards: ICardShow[]) => {
-    for (const { html, seconds, isRecap } of cards) {
-      if (isRecap) recapAt = now();
+    for (const { html, seconds, part } of cards) {
+      if (part) parts.push({ name: part, at: now() });
       await page.evaluate(async (srcdoc) => {
         const before = [...document.querySelectorAll('.demo-slide')];
         const frame = document.createElement('iframe');
@@ -851,6 +857,7 @@ export const playJourney = async (
     await openEditor(page);
     await firstVisit(page);
     begin = now();
+    parts.push({ name: 'opening', at: begin });
     state.cards = demo.opening.map((card) => ({
       html: renderCard(card, chapters),
       seconds: card.seconds ?? 8
@@ -858,7 +865,8 @@ export const playJourney = async (
     for (const [index, chapter] of chapters.slice(0, last).entries()) {
       state.cards.push({
         html: renderChapter(index, chapters),
-        seconds: chapter.cardSeconds ?? 4
+        seconds: chapter.cardSeconds ?? 4,
+        part: chapter.name
       });
       for (const step of chapter.steps) {
         try {
@@ -875,7 +883,7 @@ export const playJourney = async (
       state.cards.push({
         html: renderCard(demo.recap, chapters),
         seconds: demo.recap.seconds ?? 9,
-        isRecap: true
+        part: 'recap'
       });
     }
     await flushCards(page);
@@ -896,7 +904,7 @@ export const playJourney = async (
     begin,
     duration: now(),
     segments,
-    ...(recapAt === undefined ? {} : { recap: recapAt })
+    parts
   };
   writeFileSync(
     join(out, 'journey.json'),

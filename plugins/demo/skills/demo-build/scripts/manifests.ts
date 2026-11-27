@@ -894,6 +894,10 @@ export const loadDemo = (folderArg: string): IDemo => {
   const listed = Array.isArray(demo.chapters) ? demo.chapters.map(String) : [];
   const chapters: IChapter[] = [];
   for (const name of listed) {
+    if (name === 'opening' || name === 'recap')
+      problems.push(
+        `${demoLabel}: a Chapter is not named ${name}, which names the ${name}'s part of the video`
+      );
     const doc = named.get('Chapter')?.get(name);
     if (!doc) {
       problems.push(`${demoLabel}: no Chapter ${name}`);
