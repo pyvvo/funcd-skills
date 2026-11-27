@@ -186,6 +186,7 @@ export const playJourney = async (
     page: 'editor',
     file: '',
     isTerminalFocused: false,
+    hasTerminal: false,
     cards: [] as ICardShow[]
   };
 
@@ -453,6 +454,13 @@ export const playJourney = async (
   const focusTerminal = async (page: Page) => {
     if (state.isTerminalFocused) return;
     const screens = page.locator('.terminal-wrapper .xterm-screen');
+    // the editor restores the journey's terminals a moment after a reload: wait for them rather than open another one,
+    // which would take the command before its shell is up
+    if (state.hasTerminal)
+      await screens
+        .last()
+        .waitFor({ timeout: 20_000 })
+        .catch(() => undefined);
     if ((await screens.count()) === 0) {
       await command(page, 'Terminal: Create New Terminal');
       await screens.first().waitFor();
@@ -465,6 +473,7 @@ export const playJourney = async (
       await sleep(200);
       await page.keyboard.press('Backspace');
     }
+    state.hasTerminal = true;
     state.isTerminalFocused = true;
   };
 
