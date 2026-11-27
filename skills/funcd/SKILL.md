@@ -3,7 +3,7 @@ name: funcd
 description: Builds, runs and deploys workloads on funcd, the single-binary serverless platform, with funcdctl — Functions and their handlers in TypeScript or Python, Apps, Sites, Workflows, and the resources they use (KVStore, Bucket, SQLDatabase, Lake, Secret, ConfigMap, EventSource, Sensor, Route, EgressPolicy, Identity, RolesAssignment, Policy, BackupSchedule, Restore). Use when the user writes a funcd handler or manifest, runs or debugs funcdctl dev, funcdctl apply, get or logs, reads a funcd status reason, or mentions funcd or funcdctl.
 license: Apache-2.0
 metadata:
-  docs-release: "v0.52.0"
+  docs-release: "v0.53.0"
   docs: "https://funcd.dev/llms.txt"
 ---
 
