@@ -1,7 +1,7 @@
 {
   "name": "funcd",
   "description": "Build, run and deploy Functions, Apps, Sites and Workflows on funcd with funcdctl, from funcd's docs.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": {
     "name": "The funcd Authors"
   },
