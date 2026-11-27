@@ -9,6 +9,8 @@ Source: https://funcd.dev/docs/develop/workloads/function.md (the Markdown copy 
 - Write a handler and its contract
 - Call another Function
 - Serve HTTP requests
+- Stream a response
+- Take WebSocket connections
 - Scale a Function to zero
 - Access
 - Limits and quotas
@@ -19,7 +21,7 @@ Source: https://funcd.dev/docs/develop/workloads/function.md (the Markdown copy 
 - Examples
 
 
-Run a Function, call it, read its status and its logs, call one Function from another, serve HTTP, and scale to zero.
+Run a Function, call it, read its status and its logs, call one Function from another, serve HTTP, stream a response, take WebSocket connections, and scale to zero.
 
 ## Usage
 
@@ -28,7 +30,8 @@ answers each call. This example runs log-burst, which takes events and returns `
 [Serve HTTP requests](#serve-http-requests) shows a Function that takes HTTP requests.
 
 Install the [dev build of funcdctl](https://funcd.dev/docs/get-started/install.md), Git, curl, and Node.js, or Python 3.12 or later
-as `python3`. `funcdctl dev` runs each Function from the code in the folder, not from the manifest's `image`, the
+as `python3`; with Docker or nerdctl instead, `funcdctl dev --containers` runs the Functions in containers and needs
+neither. `funcdctl dev` runs each Function from the code in the folder, not from the manifest's `image`, the
 [artifact](https://funcd.dev/docs/platform/workloads/artifacts.md) that [`funcdctl push`](https://funcd.dev/docs/develop/tools/funcdctl/spec.md#funcdctl-push)
 packs for a platform. `--gport` sets the port of the Function URLs, and `--cport` that of the control plane, which
 `funcdctl` reaches with `--server` and the token `funcd-dev-token`.
@@ -469,6 +472,70 @@ $ curl -s http://127.0.0.1:8080/function/devices-api/devices
 The folder's [Route](https://funcd.dev/docs/develop/security-and-networking/networking/spec.md#route) `api` serves the same app at
 `/api/devices`. Press Ctrl-C in the first terminal to stop.
 
+## Stream a response
+
+A Function that serves HTTP can answer a call through the edge with a stream, such as server-sent events (SSE): the
+edge passes each chunk to the client as the app writes it. The Function's [`timeout`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec) bounds only
+the wait for the response to start. Once it has started, funcd sets no limit on its length, and a stream that sends
+nothing stays open. funcd cuts a stream only when funcd or the stream's worker stops, or when its client accepts no data
+for 60 seconds while the app has data to send. Over a link, `ctx.fetch` returns the response whole, at most 1 MiB, so
+it does not stream.
+
+In TypeScript, Hono's [`streamSSE`](https://hono.dev/docs/helpers/streaming#streamsse) writes one: a route returns
+`streamSSE(c, async (stream) => { … })`, whose `stream.writeSSE({ id, data })` sends an event, and `stream.aborted` turns
+true once the client goes away.
+
+- A proxy in front of funcd, such as a load balancer, a CDN or a tunnel, may close a stream that sends nothing for a
+  while. Send an SSE comment line about every 30 seconds, `await stream.write(': ping\n\n')`, which a browser ignores.
+- An open stream is a call in flight until it ends: it keeps its worker from going idle, and at a change of the
+  Function it stays on the old worker, which funcd stops after `runtime.drainGrace`, 30 seconds by default. The client
+  then sees the connection cut.
+- A browser's `EventSource` reconnects by itself and reaches the new revision, with the `id` of the last event it got
+  in the `Last-Event-ID` header, so the app can resume from there. A client that reads the stream with `fetch` must
+  reconnect itself.
+
+## Take WebSocket connections
+
+A Function that serves HTTP takes WebSocket connections at its addresses, so both ends send at any time, such as a
+phone remote and a TV page linked by a relay.
+
+- The Function's [`timeout`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec) bounds only the handshake. A message holds at most 1 MiB, and a
+  larger one closes its socket with code 1009.
+- An open socket is a call in flight: it keeps its worker from going idle, and at a change of the Function it stays
+  on the old worker, which funcd stops after `runtime.drainGrace`, 30 seconds by default. The socket then ends with
+  no close frame, and the client must reconnect, which reaches the new revision.
+- funcd closes a socket that carries no byte either way for 5 minutes, and a proxy in front may close one sooner, so
+  send a ping or a message about every 30 seconds.
+- With one replica, every socket of the Function meets on its one worker, so a relay can keep its sockets in memory;
+  during a change they sit on two workers until the old one stops.
+
+### TypeScript
+
+A route made with `upgradeWebSocket` from `@funcd-dev/shim/ws` takes a socket, as Hono's own helper does on Node; that
+entry needs Hono, and `@types/ws` for TypeScript. Each event runs in the context of the call that opened the socket:
+`ctx.principal` is who opened it, and `ctx.remainingMs()` is `null`. The example's route `/relay` sends each message to
+every other socket of the route:
+
+```ts
+.get(
+  '/relay',
+  // Each message goes to every other socket of the route (funcd ADR-0360), such as from a phone remote to a TV page.
+  upgradeWebSocket(() => ({
+    onOpen(_event, ws) {
+      relay.add(ws);
+    },
+    onMessage(event, ws) {
+      for (const peer of relay) {
+        if (peer !== ws && typeof event.data === 'string') peer.send(event.data);
+      }
+    },
+    onClose(_event, ws) {
+      relay.delete(ws);
+    },
+  })),
+)
+```
+
 ## Scale a Function to zero
 
 A Function that sets neither [`replicas`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec) nor
@@ -492,7 +559,8 @@ spec:
 ```
 
 - funcd looks for idle Functions every [`invoke.reclaimInterval`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 30
-  seconds by default, so workers can outlive `idleTimeout` by that much. A call in flight keeps the Function awake.
+  seconds by default, so workers can outlive `idleTimeout` by that much. A call in flight, an open stream or socket
+  too, keeps the Function awake.
 - A call waiting for a worker gets 503 after `invoke.activationTimeout`, 30 seconds by default; the calls that arrive
   during a start share that wait.
 - `minReplicas` above 0 keeps that many workers, and the Function never goes `Idle`. `replicas` above 0 with
@@ -524,7 +592,8 @@ permit(principal, action == Action::"link::invoke", resource)
 - A call through the edge carries at most 1 MiB, or gets 413, and must start its response within the Function's
   [`timeout`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec), or [`invoke.defaultTimeout`](https://funcd.dev/docs/develop/running-funcd/spec.md#funcdconfigyaml), 60
   seconds by default, a cold start included. Past it, the caller gets 504 while the handler goes on, so a retry can
-  repeat its effects; a Python handler gets an exception a second later. [`ctx.remainingMs`](https://funcd.dev/docs/develop/workloads/function/spec.md#handler-api)
+  repeat its effects; a Python handler gets an exception a second later. A response that has started has no time
+  limit: [Stream a response](#stream-a-response). [`ctx.remainingMs`](https://funcd.dev/docs/develop/workloads/function/spec.md#handler-api)
   (`remaining_ms`) returns the time left, or `null` with no deadline.
 - A handler that blocks its worker, such as a loop that never awaits or a `time.sleep`, fails its liveness check, and
   funcd replaces the worker after `runtime.livenessTimeout`, 30 seconds by default.
@@ -568,8 +637,8 @@ funcd refuses the calls of a `Failed` Function at once with 503. `status.current
 - funcd runs each version of a Function's spec as a **revision**, named after the Function and a growing number, such
   as `log-burst-2`; `funcdctl get revisions -n <namespace>` lists them.
 - A new revision's workers start beside the serving ones and take the calls once all are ready. An old worker stops
-  once idle, and is cut off after `runtime.drainGrace`, 30 seconds by default. A revision that cannot load its handler
-  takes no call.
+  once idle, and is cut off after `runtime.drainGrace`, 30 seconds by default, with its open streams. A revision that
+  cannot load its handler takes no call.
 - A revision keeps the image digest of its creation, so push new code under a new tag, or set
   [`imageDigest`](https://funcd.dev/docs/develop/workloads/function/spec.md#functionspec).
 - A delete stops the workers at once, cutting their calls, and removes the revisions, with a Lake or a
@@ -583,9 +652,9 @@ funcd refuses the calls of a `Failed` Function at once with 503. `status.current
 
 | Error | Action |
 | --- | --- |
-| `no node interpreter found for the node handler` | Put Node.js on the `PATH`, or set `FUNCD_NODE` to the path of `node`. |
-| `no python interpreter found for the python handler` | Put Python 3.12 or later on the `PATH` as `python3`, or set `FUNCD_PYTHON` to its path. |
-| `cannot load the runtime shim (needs Python ≥3.12; set FUNCD_PYTHON)` | Put Python 3.12 or later on the `PATH` as `python3`, or set `FUNCD_PYTHON` to its path. |
+| `no node interpreter found for the node handler` | Put Node.js on the `PATH`, or set `FUNCD_NODE` to the path of `node`. With Docker or nerdctl, `funcdctl dev --containers` needs no Node.js. |
+| `no python interpreter found for the python handler` | Put Python 3.12 or later on the `PATH` as `python3`, or set `FUNCD_PYTHON` to its path. With Docker or nerdctl, `funcdctl dev --containers` needs no Python. |
+| `cannot load the runtime shim (needs Python ≥3.12; set FUNCD_PYTHON)` | Put Python 3.12 or later on the `PATH` as `python3`, or set `FUNCD_PYTHON` to its path. With Docker or nerdctl, `funcdctl dev --containers` needs no Python. |
 | `no build of "<name>"` or `no contract file for "<name>"` | Build the Function, or name its build and its contract file after it, where [Run it locally](#run-it-locally) says that `funcdctl dev` looks. The message names the paths that it looked at. |
 | A Function's manifest and contract file `disagree on the runtime or protocol`. | Name the same `runtime` and `protocol` in both files. |
 | A resource is in another namespace: `funcdctl dev runs namespace default only`. | Set the resource's namespace to `default`. |
@@ -608,4 +677,4 @@ funcd refuses the calls of a `Failed` Function at once with 503. `status.current
   [in Python](https://github.com/pyvvo/funcd-python/tree/main/examples/log-burst): log lines and their count.
 - [fn-to-fn in TypeScript](https://github.com/pyvvo/funcd-typescript/tree/main/examples/fn-to-fn): a call over a link.
 - [http-api in TypeScript](https://github.com/pyvvo/funcd-typescript/tree/main/examples/http-api): HTTP with a web
-  framework.
+  framework, a streamed export and a WebSocket relay.

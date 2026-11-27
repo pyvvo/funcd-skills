@@ -377,7 +377,7 @@ the status; with `funcdctl dev`, add the `--server` and `--token` flags of its b
 
 | Error | Action |
 | --- | --- |
-| `no node interpreter found for the node handler` | Put Node.js on the `PATH`, or set `FUNCD_NODE` to the path of `node`. |
+| `no node interpreter found for the node handler` | Put Node.js on the `PATH`, or set `FUNCD_NODE` to the path of `node`. With Docker or nerdctl, `funcdctl dev --containers` needs no Node.js. |
 | `no build of "<name>"` | Build the Function, or name its build after it, where the [Function page](https://funcd.dev/docs/develop/workloads/function.md#run-it-locally) says that `funcdctl dev` looks. The message names the paths that it looked at. |
 
 ## Run it locally
