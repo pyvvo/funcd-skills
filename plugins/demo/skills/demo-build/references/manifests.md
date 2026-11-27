@@ -232,6 +232,8 @@ Run the engine from the project's root, or under it: `node <demo-build>/scripts/
   settings in the browser, so the engine writes the workspace's `.vscode/settings.json`: no walkthrough, no AI, no
   suggestions, no autosave, a long hover delay, as a tooltip shows a file's full path, and a terminal whose prompt
   shows the Demo's `prompt` alone.
+- **A site's page** shows its address in a bar above it, as a browser would: the video has no browser around the
+  page. The page starts 36 pixels lower, below the bar.
 - **The workspace** is the only place that the engine writes: those settings, and each typed File's starting text.
 - **The video** is Playwright's recording of one page, which goes from the editor to the sites and back. Cards are
   frames laid over that page, so the editor keeps its state under them. The render cuts the editor's first visit,
